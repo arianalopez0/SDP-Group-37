@@ -5,17 +5,18 @@ from ollama import chat
 from ollama import ChatResponse
 from ..data_agent.data_agent import DataAgent
 from ..routing_agent import RoutingAgent
+from ..LLM.LLM import llm_query_orchestration as get_response
 
 
-#gets response from LLM
-def get_response(prompt, model="llama3.1:8b"):
-    response: ChatResponse = chat(
-        model=model, 
-        messages=[{'role': 'system', 'content': prompt}],
-        format="json",
-        options={"temperature":0.075}
-    )
-    return response.message.content
+# #gets response from LLM
+# def get_response(prompt, model="llama3.1:8b"):
+    # response: ChatResponse = chat(
+        # model=model, 
+        # messages=[{'role': 'system', 'content': prompt}],
+        # format="json",
+        # options={"temperature":0.075}
+    # )
+    # return response.message.content
 
 #returns required data for answering response
 def interpret_query(query):
@@ -49,7 +50,7 @@ def interpret_query(query):
     """
     
     #get response based on prompt
-    response=json.loads(get_response(prompt).lower())
+    response=get_response(prompt)
     need_shelter_data=False
     need_routing_data=False
     error=""

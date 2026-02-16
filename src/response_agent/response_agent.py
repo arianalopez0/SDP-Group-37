@@ -2,18 +2,19 @@ import json
 from ollama import chat
 from ollama import ChatResponse
 from src.orchestration.orchestration import main as run_orchestration
+from src.LLM.LLM import llm_query_response as get_response
 
-#gets response from LLM
-def get_response(prompt, model="llama3.1:8b"):
-	response: ChatResponse = chat(
-		model=model, 
-		messages=[
-            {"role": "system", "content": "You are an emergency response summarization assistant."},
-            {"role": "user", "content": prompt}
-        ],
-		options={"temperature":0.075}
-	)
-	return response.message.content.strip()
+# #gets response from LLM
+# def get_response(prompt, model="llama3.1:8b"):
+	# response: ChatResponse = chat(
+		# model=model, 
+		# messages=[
+            # {"role": "system", "content": "You are an emergency response summarization assistant."},
+            # {"role": "user", "content": prompt}
+        # ],
+		# options={"temperature":0.075}
+	# )
+	# return response.message.content.strip()
 
 def generate_response(query, context):
     prompt = f"""

@@ -9,18 +9,19 @@ headers={
     "Authorization":"Bearer "+deepinfra_token
 }
 
-def llm_query(messages,return_json=True):
+def llm_query(messages,return_json=False):
     json_data = {
-        "model": "meta-llama/Meta-Llama-3-8B-Instruct",
-        "messages":messages
-        "options":{"temperature":0.075}
+        "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+        "messages":messages,
+        "properties":{
+            "temperature":0.075,
+        }
     }
     if return_json:
-        json_data["format"]="json"
+        json_data["properties"]["response_format"]="json"
 
     response=requests.post("https://api.deepinfra.com/v1/openai/chat/completions",headers=headers,json=json_data)
-    print(response)
-    return response.message.content
+    return json.loads(response.content)["choices"][0]["message"]["content"]
 
 def llm_query_response(prompt):
     response=llm_query([
@@ -34,7 +35,7 @@ def llm_query_orchestration(prompt):
             {"role": "system", "content": prompt}
         ],
         True)
-    return response
+    return json.loads(response.replace("'","\"").lower())
     
 if __name__=="__main__":
     print(llm_query_orchestration("Just testing this out!"))
