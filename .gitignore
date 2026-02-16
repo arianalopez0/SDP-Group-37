@@ -4,3 +4,6 @@ data-agent/data/hazards/
 
 # Ignore large geospatial and data files
 *.zip
+
+
+document-agent/.doc_index/
