@@ -1,0 +1,73 @@
+{
+  "input_location": {
+    "lat": 41.8111114,
+    "lon": -72.2483889
+  },
+  "nearest_shelters": [
+    {
+      "name": "University Of Connecticut Guyer Gym",
+      "address": "2111 Hillside Rd",
+      "city": "STORRS MANSFIELD",
+      "state": "CT",
+      "zip": "06269",
+      "status": "CLOSED",
+      "lat": 41.80732530000006,
+      "lon": -72.25568417099998,
+      "straightline_distance_miles": 0.46,
+      "handicap_accessible": "No",
+      "hazard_polygons": null
+    },
+    {
+      "name": "University Of Connecticut Gampel Pavilion",
+      "address": "2095 HILLSIDE RD",
+      "city": "STORRS MANSFIELD",
+      "state": "CT",
+      "zip": "06269",
+      "status": "CLOSED",
+      "lat": 41.807756975000075,
+      "lon": -72.25615181799998,
+      "straightline_distance_miles": 0.46,
+      "handicap_accessible": "Yes",
+      "hazard_polygons": null
+    },
+    {
+      "name": "Mansfield Community Center",
+      "address": "4 South Eagleville Rd.",
+      "city": "MANSFIELD",
+      "state": "CT",
+      "zip": "06268",
+      "status": "CLOSED",
+      "lat": 41.80103538700007,
+      "lon": -72.24124633199995,
+      "straightline_distance_miles": 0.79,
+      "handicap_accessible": "No",
+      "hazard_polygons": null
+    },
+    {
+      "name": "Coventry Middle/ High School",
+      "address": "78 RIPLEY HILL RD",
+      "city": "COVENTRY",
+      "state": "CT",
+      "zip": "06238",
+      "status": "CLOSED",
+      "lat": 41.788673362000054,
+      "lon": -72.30661277699994,
+      "straightline_distance_miles": 3.38,
+      "handicap_accessible": "Yes",
+      "hazard_polygons": null
+    },
+    {
+      "name": "Willington Hill Fire Department",
+      "address": "24 Old Farms Road",
+      "city": "WILLINGTON",
+      "state": "CT",
+      "zip": "06279",
+      "status": "CLOSED",
+      "lat": 41.86332608300006,
+      "lon": -72.24377714699995,
+      "straightline_distance_miles": 3.61,
+      "handicap_accessible": "Yes",
+      "hazard_polygons": null
+    }
+  ]
+}
