@@ -1,9 +1,9 @@
 ## Frontend Migration (React)
 
 ### 1. Verify Node.js is installed
-bash
 node -v
 npm -v
+
 
 ### 2. Install Frontend Dependencies
 cd frontend
