@@ -4,7 +4,7 @@
 node -v
 npm -v
 
-### 2. Start FastAPI backend
+### 2. Start FastAPI backend, in first terminal
 From project root:
 ```bash
 uvicorn api:app --reload
@@ -17,7 +17,7 @@ cd frontend
 npm install
 ```
 
-### 4. Run dev server
+### 4. Run dev server, in a second terminal
 ```bash
 cd frontend
 npm run dev
