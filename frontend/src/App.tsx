@@ -1,18 +1,65 @@
-import { useMemo, useState } from "react";
-import mockRaw from "./mock_raw_data.json";
+import { Fragment, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 
 type Coord = [number, number];
 
-const USE_MOCK = true;
+const USE_MOCK = false;
+
+function getCenter(data: any): Coord | null {
+  const a = data?.user_location;
+  const b = data?.input_location;
+  const lat = a?.lat ?? b?.lat;
+  const lon = a?.lon ?? b?.lon;
+  if (typeof lat === "number" && typeof lon === "number") return [lat, lon];
+  return null;
+}
+
+function getShelters(data: any) {
+  if (Array.isArray(data?.shelters)) {
+    return data.shelters.map((s: any) => ({
+      name: s.name,
+      address: s.address,
+      city: s.city,
+      state: s.state,
+      zip: s.zip,
+      status: s.status,
+      lat: s.location?.lat,
+      lon: s.location?.lon,
+      distance: s.route?.distance?.display ?? null,
+      handicap: null,
+      path: s.route?.path_coordinates ?? null,
+    }));
+  }
+
+  if (Array.isArray(data?.nearest_shelters)) {
+    return data.nearest_shelters.map((s: any) => ({
+      name: s.name,
+      address: s.address,
+      city: s.city,
+      state: s.state,
+      zip: s.zip,
+      status: s.status,
+      lat: s.lat,
+      lon: s.lon,
+      distance: s.straightline_distance_miles != null
+        ? `${s.straightline_distance_miles} mi`
+        : null,
+      handicap: s.handicap_accessible ?? null,
+      path: null,
+    }));
+  }
+
+  return [];
+}
 
 export default function App() {
   const [query, setQuery] = useState("");
   const [startLocation, setStartLocation] = useState("Storrs, CT");
   const [mode, setMode] = useState("Shelters nearby");
-
   const [response, setResponse] = useState<string>("");
   const [rawData, setRawData] = useState<any>(null);
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(false);
 
   async function runQuery() {
     if (!query.trim()) {
@@ -20,81 +67,39 @@ export default function App() {
       return;
     }
 
-    if (USE_MOCK) {
-      setResponse("Mock response using real Streamlit schema.");
-      setRawData(mockRaw);
-      return;
+    setError("");
+    setResponse("");
+    setRawData(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:8000/run-query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, start_location: startLocation, mode }),
+      });
+
+      // Guard against non-JSON responses (e.g. 500 HTML error pages from uvicorn)
+      const contentType = res.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        setError(`Server error ${res.status}: received non-JSON response`);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data?.error) {
+        setError(`Backend error: ${data.error}`);
+        return;
+      }
+
+      setResponse(data.response ?? "");
+      setRawData(data.raw_data ?? null);
+    } catch (e: any) {
+      setError(`Request failed: ${e?.message ?? String(e)}`);
+    } finally {
+      setLoading(false);
     }
-
-    // Future backend call
-    const res = await fetch("http://localhost:8000/run-query", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query,
-        start_location: startLocation,
-        mode
-      })
-    });
-
-    const data = await res.json();
-    setResponse(data.response);
-    setRawData(data.raw_data);
-  }
-
-  // ---- Flexible schema support ----
-
-  function getCenter(data: any): Coord | null {
-    const a = data?.user_location;
-    const b = data?.input_location;
-
-    const lat = a?.lat ?? b?.lat;
-    const lon = a?.lon ?? b?.lon;
-
-    if (typeof lat === "number" && typeof lon === "number") {
-      return [lat, lon];
-    }
-
-    return null;
-  }
-
-  function getShelters(data: any) {
-    // Old schema
-    if (Array.isArray(data?.shelters)) {
-      return data.shelters.map((s: any) => ({
-        name: s.name,
-        address: s.address,
-        city: s.city,
-        state: s.state,
-        zip: s.zip,
-        status: s.status,
-        lat: s.location?.lat,
-        lon: s.location?.lon,
-        distance: s.route?.distance?.display,
-        path: s.route?.path_coordinates ?? null
-      }));
-    }
-
-    // New schema (your current Streamlit output)
-    if (Array.isArray(data?.nearest_shelters)) {
-      return data.nearest_shelters.map((s: any) => ({
-        name: s.name,
-        address: s.address,
-        city: s.city,
-        state: s.state,
-        zip: s.zip,
-        status: s.status,
-        lat: s.lat,
-        lon: s.lon,
-        distance: s.straightline_distance_miles
-          ? `${s.straightline_distance_miles} mi`
-          : null,
-        handicap: s.handicap_accessible,
-        path: null
-      }));
-    }
-
-    return [];
   }
 
   const center = useMemo(() => getCenter(rawData), [rawData]);
@@ -105,11 +110,10 @@ export default function App() {
       <h1>Disaster Routing Assistant (React MVP)</h1>
 
       <p style={{ maxWidth: 900 }}>
-        Mock mode using real Streamlit schema. Ready to swap to backend API.
+        Connected to FastAPI backend at localhost:8000.
       </p>
 
       <h3>Ask a question</h3>
-
       <textarea
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -127,7 +131,6 @@ export default function App() {
             style={{ width: "100%", padding: 10 }}
           />
         </div>
-
         <div style={{ width: 240 }}>
           <div style={{ marginBottom: 6 }}>Mode</div>
           <select
@@ -142,9 +145,27 @@ export default function App() {
         </div>
       </div>
 
-      <button onClick={runQuery} style={{ marginTop: 12, padding: "10px 14px" }}>
-        Run query
+      <button
+        onClick={runQuery}
+        disabled={loading}
+        style={{ marginTop: 12, padding: "10px 14px" }}
+      >
+        {loading ? "Running..." : "Run query"}
       </button>
+
+      {error && (
+        <div style={{ marginTop: 12, padding: 12, background: "#ffe5e5" }}>
+          <b>{error}</b>
+        </div>
+      )}
+
+      {/* Warn if map center couldn't be determined from response */}
+      {rawData && !center && (
+        <div style={{ marginTop: 12, padding: 12, background: "#fff3cd" }}>
+          Warning: could not determine map center — check that raw_data contains{" "}
+          <code>input_location</code> or <code>user_location</code> with lat/lon.
+        </div>
+      )}
 
       {response && (
         <>
@@ -156,27 +177,21 @@ export default function App() {
       {center && shelters.length > 0 && (
         <>
           <h2 style={{ marginTop: 16 }}>Map View</h2>
-
           <div style={{ height: 650 }}>
             <MapContainer center={center} zoom={13} style={{ height: "100%" }}>
               <TileLayer
                 attribution="&copy; OpenStreetMap contributors"
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-
-              {/* User location marker */}
               <Marker position={center}>
                 <Popup>Your Location</Popup>
               </Marker>
 
-              {/* Shelter markers */}
               {shelters.slice(0, 5).map((s: any, idx: number) => {
-                if (!s.lat || !s.lon) return null;
-
+                if (s.lat == null || s.lon == null) return null;
                 const pos: Coord = [s.lat, s.lon];
-
                 return (
-                  <div key={idx}>
+                  <Fragment key={idx}>
                     <Marker position={pos}>
                       <Popup>
                         <div>
@@ -187,20 +202,15 @@ export default function App() {
                           {s.city}, {s.state} {s.zip}
                           <br />
                           Status: {s.status}
-                          <br />
-                          {s.distance ? `Distance: ${s.distance}` : null}
-                          <br />
-                          {s.handicap
-                            ? `Handicap Accessible: ${s.handicap}`
-                            : null}
+                          {s.distance && <><br />Distance: {s.distance}</>}
+                          {s.handicap && <><br />Handicap Accessible: {s.handicap}</>}
                         </div>
                       </Popup>
                     </Marker>
-
                     {Array.isArray(s.path) && s.path.length > 1 && (
                       <Polyline positions={s.path} />
                     )}
-                  </div>
+                  </Fragment>
                 );
               })}
             </MapContainer>
@@ -211,9 +221,7 @@ export default function App() {
       {rawData && (
         <details style={{ marginTop: 16 }}>
           <summary>Technical Details</summary>
-          <pre style={{ overflowX: "auto" }}>
-            {JSON.stringify(rawData, null, 2)}
-          </pre>
+          <pre style={{ overflowX: "auto" }}>{JSON.stringify(rawData, null, 2)}</pre>
         </details>
       )}
     </div>
