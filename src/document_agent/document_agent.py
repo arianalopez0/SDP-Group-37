@@ -174,9 +174,9 @@ class NoLLMSummarizer(Summarizer):
         reason = "Summary derived directly from indexed document excerpts."
         return bullets, conf, reason
 
-# Example OpenAI summarizer (optional). Wire your key + model if you want.
+# Example OpenAI summarizer (optional). Wire your key + model.
 class OpenAISummarizer(Summarizer):
-    def __init__(self, model: str = "gpt-4o-mini", api_key: Optional[str] = None):
+    def __init__(self, model: str = "gpt-5.2", api_key: Optional[str] = None):
         self.model = model
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
 

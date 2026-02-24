@@ -32,5 +32,5 @@ __pycache__/
 *.pyo
 *.pyd
 
-document-agent/.doc_index/
+document_agent/.doc_index/
 
