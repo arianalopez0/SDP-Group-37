@@ -18,7 +18,10 @@ npm install
 ```
 
 ### 4. Run dev server
+```bash
+cd frontend
 npm run dev
+```
 
 ### 5. Open in browser
 http://localhost:5173
