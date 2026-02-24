@@ -1,6 +1,6 @@
 ## Frontend Migration (React)
 
-### 1. Verify Node.js is installed
+### 1. Verify Node.js is installed (first time)
 node -v
 npm -v
 
@@ -11,7 +11,7 @@ uvicorn api:app --reload
 ```
 Backend runs at http://localhost:8000 so keep this terminal open.
 
-### 3. Install Frontend Dependencies
+### 3. Install Frontend Dependencies (first time)
 ```bash
 cd frontend
 npm install
