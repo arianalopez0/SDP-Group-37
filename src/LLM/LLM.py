@@ -3,6 +3,7 @@ import requests
 
 with open("secrets.env") as f:
     deepinfra_token=json.loads(f.read())["token"]
+conversation=[]
 
 headers={
     "Content-Type":"application/json",
@@ -23,12 +24,15 @@ def llm_query(messages,return_json=False):
     response=requests.post("https://api.deepinfra.com/v1/openai/chat/completions",headers=headers,json=json_data)
     return json.loads(response.content)["choices"][0]["message"]["content"]
 
-def llm_query_response(prompt):
+def llm_query_response(prompt,query):
+    conversation.append({"user":query})
     response=llm_query([
-            {"role": "system", "content": "You are an emergency response summarization assistant."},
+            {"role": "system", "content": f"""You are an emergency response summarization assistant.
+                Here are the previous messages in the conversation: {json.dumps(conversation)}"""},
             {"role": "user", "content": prompt}
-        ])
-    return response.strip()
+        ]).strip()
+    conversation.append({"you":response})
+    return response
 
 def llm_query_orchestration(prompt):
     response=llm_query([
