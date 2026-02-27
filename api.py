@@ -26,7 +26,7 @@ class QueryRequest(BaseModel):
 
 @app.post("/run-query")
 async def run_query(req: QueryRequest):
-    # try:
+    try:
         # Geocode the start location string into lat/lon
         location = geolocator.geocode(req.start_location)
         if not location:
@@ -56,5 +56,5 @@ async def run_query(req: QueryRequest):
             "raw_data": context,
         }
 
-    # except Exception as e:
-        # return {"error": str(e)}
+    except Exception as e:
+        return {"error": str(e)}
