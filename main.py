@@ -12,7 +12,7 @@ if __name__=="__main__":
 
     # 1. run orchestration (collects shelter and routing data)
     # NOTE: orchestration.main() already prints context, so this keeps existing behavior
-    context = orchestration.main(query)
+    context = orchestration.main(query, 41.7658, -72.6734)
 
     if not context:
         print("No context returned from orchestration.")
