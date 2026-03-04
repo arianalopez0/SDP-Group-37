@@ -41,11 +41,26 @@ Here are the previous messages in the conversation:
     return response
 
 def llm_query_orchestration(prompt):
-    response=llm_query([
-            {"role": "system", "content": prompt}
-        ],
-        True,0.01)
-    return json.loads(response.lower())
+    attempts=0
+    while attempts<20:
+        attempts+=1
+        try:
+            response=llm_query([
+                    {"role": "system", "content": prompt}
+                ],
+                True,0)
+            response_dict=json.loads(response.lower())
+            return response_dict
+        except json.decoder.JSONDecodeError:
+            try:
+                response_dict=json.loads(response.lower()+"}")
+                return response_dict
+            except:
+                print("Invalid JSON generated in orchestration, trying again")
+        except Exception as e:
+            print(type(e))
+            print("Invalid JSON generated in orchestration, trying again")
+    return None
     
 if __name__=="__main__":
     print(llm_query_orchestration("Just testing this out!"))

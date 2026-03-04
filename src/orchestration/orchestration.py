@@ -83,19 +83,19 @@ def test_queries():
         {"query":"Where are the nearest disaster shelters?",
             "desired":[[True,False]],
             "acceptable":[[True,True]],
-            "trials":10
+            "trials":40
         },
         #Asking for routing data
         {"query":"How do I get to the Storrs disaster shelter?",
             "desired":[[True, True]],
             "acceptable":[],
-            "trials":10
+            "trials":40
         },
         #Random unrelated question
         {"query":"I really really like pigs. Do you like pigs?",
             "desired":[[False,False]],
             "acceptable":[],
-            "trials":5
+            "trials":20
         },
     ]
     
