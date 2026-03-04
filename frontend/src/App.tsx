@@ -330,16 +330,16 @@ const ms: Record<string, React.CSSProperties> = {
 function AboutPage() {
   const team = [
     { name: "Suining He", role: "Faculty Advisor", icon: "🎓" },
-    { name: "Magdalena Danielewicz", role: "Student", icon: "👩‍💻" },
-    { name: "Manasvi Iyengar", role: "Student", icon: "👩‍💻" },
-    { name: "Connor Cybart", role: "Student", icon: "👨‍💻" },
-    { name: "Cameron Chrisanthopoulos", role: "Student", icon: "👨‍💻" },
-    { name: "Ariana Lopez", role: "Student", icon: "👩‍💻" },
+    { name: "Magdalena Danielewicz", role: "Computer Science & Analytics", icon: "👩‍💻" },
+    { name: "Manasvi Iyengar", role: "Computer Science & Economics", icon: "👩‍💻" },
+    { name: "Connor Cybart", role: "Computer Science", icon: "👨‍💻" },
+    { name: "Cameron Chrisanthopoulos", role: "Computer Science & Information Assurance", icon: "👨‍💻" },
+    { name: "Ariana Lopez", role: "Data Science & Engineering", icon: "👩‍💻" },
   ];
   return (
     <div style={as.page}>
       <h2 style={as.h2}>About DisasterRoute CT</h2>
-      <p style={as.p}>DisasterRoute CT is a Senior Design project built to help Connecticut residents navigate emergencies by locating nearby shelters, understanding hazard zones, and planning safe evacuation routes.</p>
+      <p style={as.p}>DisasterRoute CT is a disaster resilience platform built to help Connecticut residents navigate emergencies by locating nearby shelters, understanding hazard zones, and planning safe evacuation routes.</p>
       <h3 style={as.h3}>Meet the Team</h3>
       <div style={as.grid}>
         {team.map((m) => (
