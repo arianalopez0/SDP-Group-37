@@ -4,20 +4,27 @@
 node -v
 npm -v
 
-### 2. Start FastAPI backend, in first terminal
+### 2. Install Python Dependencies (first time)
+From project root:
+```bash
+pip install fastapi uvicorn geopy geocoder react-markdown
+```
+
+### 3. Start FastAPI backend, in first terminal
 From project root:
 ```bash
 uvicorn api:app --reload
 ```
 Backend runs at http://localhost:8000 so keep this terminal open.
 
-### 3. Install Frontend Dependencies (first time)
+### 4. Install Frontend Dependencies (first time)
 ```bash
 cd frontend
 npm install
+
 ```
 
-### 4. Run dev server, in a second terminal
+### 5. Run dev server, in a second terminal
 ```bash
 cd frontend
 npm run dev
