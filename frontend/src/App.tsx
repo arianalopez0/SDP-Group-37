@@ -330,7 +330,7 @@ const ms: Record<string, React.CSSProperties> = {
 function AboutPage() {
   const team = [
     { name: "Suining He", role: "Faculty Advisor", icon: "🎓" },
-    { name: "Magdalena Danielewicz", role: "Research Assistant", icon: "🔬" },
+    { name: "Magdalena Danielewicz", role: "Student", icon: "👩‍💻" },
     { name: "Manasvi Iyengar", role: "Student", icon: "👩‍💻" },
     { name: "Connor Cybart", role: "Student", icon: "👨‍💻" },
     { name: "Cameron Chrisanthopoulos", role: "Student", icon: "👨‍💻" },
