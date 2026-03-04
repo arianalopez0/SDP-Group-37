@@ -45,7 +45,7 @@ async def guess_location():
         area = address.get(area_type, "Storrs")
         state = address.get("state", "CT")
         return {"location": f"{road}, {area}, {state}" if road else f"{area}, {state}"}
-    except Exception as e:
+    except Exception:
         return {"location": "Storrs, CT"}
 
 
@@ -57,10 +57,16 @@ async def run_query(req: QueryRequest):
             return {"error": f"Could not geocode location: '{req.start_location}'. Try a more specific address."}
 
         lat, lon = location.latitude, location.longitude
+
+        # orchestration.main() returns either:
+        #   - none:          {}
+        #   - shelter-only:  { input_location, nearest_shelters, ... }
+        #   - with routing:  { user_location, shelters, ... }
         context = orchestration.main(req.query, lat, lon)
 
         if not context:
-            return {"error": "No context returned from orchestration."}
+            response_text = generate_response(req.query, {})
+            return {"response": response_text, "raw_data": {}}
 
         # Strip path_coordinates before sending to LLM — saves tokens and improves response quality
         llm_context = copy.deepcopy(context)

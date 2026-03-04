@@ -21,14 +21,14 @@ from ..LLM.LLM import llm_query_orchestration as get_response
 #returns required data for answering response
 def interpret_query(query):
     json_template={
-        "Question":query,
+        "Message":query,
         "Response":{
             "need_shelter_data":{
-                "Description":"To answer this question, we need data about disaster shelter locations or services.",
+                "Description":"The message asks for info about disaster shelter locations or services.",
                 "Value":"NULL"
             },
             "need_routing_data":{
-                "Description":"The query specifies a location and asks for directions or routing to it.",
+                "Description":"The message specifies a location and asks for directions or routing to it.",
                 "Value":"NULL"
             }
         }
@@ -37,18 +37,20 @@ def interpret_query(query):
     #If the question is unrelated to natural disasters, shelters, or emergencies, all "NULL" values should be changed to "False".
     
     prompt=f"""
-    <role>
-    This is part of an app created to help users get information about natural disasters and disaster shelters.
-    Your job is to fill in a JSON template meticulously, matching the format EXACTLY, based on a question's required information.
-    The data we need is "need_shelter_data" and "need_routing_data".
-    To complete these, replace any instances of "NULL" with "True" or "False".
-    Do not change any other values besides "NULL" in the response.
-    </role>
-    <json_template>
-    {json_template}
-    </json_template>
+<role>
+This is part of a chatbot app created to help users get information about natural disasters and disaster shelters.
+Your job is to fill in a JSON template meticulously, matching the format EXACTLY, based on a message's required information.
+The data we need is "need_shelter_data" and "need_routing_data".
+To complete these, replace any instances of "NULL" with "True" or "False".
+Do not change any other values besides "NULL" in the response.
+Do not write anything outside of the JSON response, and make sure all opening brackets are closed.
+If the question is unrelated to natural disasters, shelters, or emergencies, all "NULL" values should be changed to "False".
+</role>
+<json_template>
+{json.dumps(json_template)}
+</json_template>
     """
-    
+        
     #get response based on prompt
     response=get_response(prompt)
     need_shelter_data=False
