@@ -3,6 +3,7 @@ from src.orchestration import orchestration
 from src.response_agent.response_agent import generate_response
 
 if __name__=="__main__":
+    #orchestration.test_queries()
     #default query
     query="What are the routes to the closest disaster shelters?"
     

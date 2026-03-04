@@ -34,3 +34,6 @@ __pycache__/
 
 document_agent/.doc_index/
 
+# Ignore .env
+*.env
+secrets.env

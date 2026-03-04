@@ -4,10 +4,11 @@
 node -v
 npm -v
 
-### 2. Install Python Dependencies (first time)
+### 2. Install Dependencies (first time)
 From project root:
 ```bash
-pip install fastapi uvicorn geopy geocoder react-markdown
+pip install fastapi uvicorn geopy geocoder 
+npm install react-markdown
 ```
 
 ### 3. Start FastAPI backend, in first terminal
@@ -32,3 +33,4 @@ npm run dev
 
 ### 5. Open in browser
 http://localhost:5173
+
