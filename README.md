@@ -1,34 +1,34 @@
-# Frontend (Streamlit UI) – Senior Design MVP
+## Frontend Migration (React)
 
-The Streamlit app connects to the backend **Orchestration Agent**, which
-classifies user queries using the LLM and calls the **Data Agent** and ***Routing Agent***, if the query requires routing.
+### 1. Verify Node.js is installed (first time)
+node -v
+npm -v
 
----
-
-##  How to Run the Frontend
-
-### 1. Create and activate a virtual environment (first time only)
-From the root of the repo:
-
-```
-python -m venv .venv
-.\.venv\Scripts\activate
+### 2. Install Python Dependencies (first time)
+From project root:
+```bash
+pip install fastapi uvicorn geopy geocoder react-markdown
 ```
 
-### 2. Install required packages
+### 3. Start FastAPI backend, in first terminal
+From project root:
+```bash
+uvicorn api:app --reload
 ```
-pip install -r requirements.txt
+Backend runs at http://localhost:8000 so keep this terminal open.
+
+### 4. Install Frontend Dependencies (first time)
+```bash
+cd frontend
+npm install
+
 ```
 
-### 3. Install and start Ollama
-Make sure ollama is downloaded
-```
-ollama pull llama3.1:8b
+### 5. Run dev server, in a second terminal
+```bash
+cd frontend
+npm run dev
 ```
 
-### 4. Run Streamlit UI
-From repo root:
-```
-python -m streamlit run frontend/app.py
-```
-The UI opens at: http://localhost:8501
+### 5. Open in browser
+http://localhost:5173
