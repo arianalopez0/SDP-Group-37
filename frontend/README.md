@@ -1,19 +1,28 @@
 ## Frontend Migration (React)
 
-### 1. Verify Node.js is installed
+### 1. Verify Node.js is installed (first time)
 node -v
 npm -v
 
+### 2. Start FastAPI backend, in first terminal
+From project root:
+```bash
+uvicorn api:app --reload
+```
+Backend runs at http://localhost:8000 so keep this terminal open.
 
-### 2. Install Frontend Dependencies
+### 3. Install Frontend Dependencies (first time)
+```bash
 cd frontend
 npm install
+```
 
-### 3. Run dev server
+### 4. Run dev server, in a second terminal
+```bash
+cd frontend
 npm run dev
+```
 
-### 4. Open in browser
+### 5. Open in browser
 http://localhost:5173
 
-
-The React frontend currently runs in mock mode using real Streamlit schema output.
