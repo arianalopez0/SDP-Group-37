@@ -38,5 +38,5 @@ document_agent/.doc_index/
 *.env
 secrets.env
 
-node_modules/
-.vite/
+frontend/node_modules/
+frontend/.vite/
