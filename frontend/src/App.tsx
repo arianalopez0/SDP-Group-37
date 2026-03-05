@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
-import ChatWidget from "./ChatWidget";
+import ChatWidget from "./Chatwidget";
 import ReactMarkdown from "react-markdown";
 
 type Coord = [number, number];
@@ -43,6 +43,7 @@ function getShelters(data: any): Shelter[] {
 
 function getRoute(shelter: Shelter, userCoord?: Coord): Coord[] | null {
   const coords = shelter.route?.path_coordinates;
+  console.log(`[${shelter.name}] path_coordinates:`, coords); 
   if (!Array.isArray(coords) || coords.length === 0) return null;
   const pts = coords.filter((c: any) => Array.isArray(c) && c.length === 2).map((c: any) => [c[0], c[1]] as Coord);
   return userCoord ? [userCoord, ...pts] : pts;

@@ -132,7 +132,7 @@ class RoutingAgent:
                     "narrative": "\n".join([f"{i+1}. {d}" for i, d in enumerate(directions)])
                 },
                 # changed to len to we dont get a spam of coordinates in the output
-                "path_coordinates": len(osrm["path_coords"])
+                "path_coordinates": osrm["path_coords"]
             })
 
         # Sort & return
