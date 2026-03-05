@@ -26,8 +26,8 @@ def llm_query(messages,return_json=False,temp=0.075):
 
 def llm_query_response(prompt,query):
     if len(conversation)>16:
-        conversation.pop_front()
-        conversation.pop_front()
+        conversation.pop(0)
+        conversation.pop(0)
     conversation.append({"user":query})
     
     response=llm_query([
