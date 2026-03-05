@@ -174,68 +174,41 @@ class NoLLMSummarizer(Summarizer):
         reason = "Summary derived directly from indexed document excerpts."
         return bullets, conf, reason
 
-# Example OpenAI summarizer (optional). Wire your key + model.
-class OpenAISummarizer(Summarizer):
-    def __init__(self, model: str = "gpt-5.2", api_key: Optional[str] = None):
-        self.model = model
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
-
+# Example OpenAI summarizer
+class DeepInfraSummarizer(Summarizer):
     def summarize(self, query: str, retrieved: List[RetrievedChunk]) -> Tuple[List[str], str, str]:
-        if not self.api_key:
-            return NoLLMSummarizer().summarize(query, retrieved)
         try:
-            from openai import OpenAI
+            from ..LLM.LLM import llm_query_document
         except Exception:
             return NoLLMSummarizer().summarize(query, retrieved)
 
-        client = OpenAI(api_key=self.api_key)
-
-        context_blocks = []
+        excerpts = []
         for i, r in enumerate(retrieved[:8], start=1):
-            context_blocks.append(
-                f"[{i}] doc={r.meta.title} source={r.meta.source} chunk={r.meta.chunk_id}\n{r.text}"
-            )
-        context = "\n\n".join(context_blocks)
+            excerpts.append({
+                "i": i,
+                "title": r.meta.title,
+                "source": r.meta.source,
+                "chunk_id": r.meta.chunk_id,
+                "text": r.text
+            })
 
-        prompt = f"""
-You are a Document Agent for a Connecticut disaster resilience app.
-Answer ONLY using the provided excerpts. Do not add new facts.
+        obj = llm_query_document(query, excerpts, temp=0.0)
+        bullets = obj.get("summary_bullets", []) or []
+        conf = obj.get("confidence", "medium")
+        reason = obj.get("confidence_reason", "")
 
-User query: {query}
-
-Excerpts:
-{context}
-
-Return JSON with:
-- summary_bullets: 3-6 bullets, plain language
-- confidence: "high"|"medium"|"low"
-- confidence_reason: short
-"""
-
-        resp = client.responses.create(
-            model=self.model,
-            input=prompt,
-        )
-        txt = resp.output_text.strip()
-
-        # Parse JSON if possible; otherwise fallback.
-        try:
-            obj = json.loads(txt)
-            bullets = [str(b) for b in obj.get("summary_bullets", [])][:6]
-            conf = str(obj.get("confidence", "medium"))
-            reason = str(obj.get("confidence_reason", ""))
-            if not bullets:
-                return NoLLMSummarizer().summarize(query, retrieved)
-            return bullets, conf, reason
-        except Exception:
+        if not bullets:
             return NoLLMSummarizer().summarize(query, retrieved)
+
+        bullets = [str(b) for b in bullets][:6]
+        return bullets, str(conf), str(reason)
 
 # --------- Main Document Agent ---------
 class DocumentAgent:
     def __init__(self, index_dir: str = os.path.join(os.path.dirname(__file__), ".doc_index"), summarizer: Optional[Summarizer] = None):
         self.index_dir = index_dir
         os.makedirs(self.index_dir, exist_ok=True)
-        self.summarizer = summarizer or NoLLMSummarizer()
+        self.summarizer = summarizer or DeepInfraSummarizer()
 
         self.docs: Dict[str, DocMeta] = {}
         self.chunks: List[str] = []
