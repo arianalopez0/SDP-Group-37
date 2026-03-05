@@ -42,7 +42,7 @@ You will be given this JSON structure:
         prompt+="""
 "document_context": {{ ... }},
 """
-    if "nearest_shelters" in context:
+    if "nearest_shelters" in context or "shelters" in context:
         prompt+="""
 "nearest_shelters": [
     {
@@ -68,7 +68,7 @@ The JSON context may contain:
 The user cannot see this context. It exists only to help you inform them.
 """
 
-    if "nearest_shelters" in context:
+    if "nearest_shelters" in context or "shelters" in context:
         prompt+="""
 If shelters are present:
     - Start with a short, warm introduction (2-3 sentences)
@@ -84,7 +84,7 @@ If document_context is present:
     - Do NOT add advice not supported by excerpts
     - Add a "Sources" section listing doc_title and source URL
 """
-        if "nearest_shelters" not in context:
+        if "nearest_shelters" not in context and "shelters" not in context:
             prompt+="""
 If ONLY document_context exists (no shelters):
     - Write a short intro acknowledging the question
