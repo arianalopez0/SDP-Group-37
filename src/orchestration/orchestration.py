@@ -77,7 +77,7 @@ If the question is unrelated to natural disasters, shelters, or emergencies, all
     except:
         error="No value key"
     
-    return [need_shelter_data, need_routing_data, need_document_data], response, error
+    return [need_shelter_data or need_routing_data, need_routing_data, need_document_data], response, error
 
 def test_queries():
     tests=[
