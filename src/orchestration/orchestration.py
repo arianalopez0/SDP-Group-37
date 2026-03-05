@@ -5,18 +5,9 @@ from ollama import chat
 from ollama import ChatResponse
 from ..data_agent.data_agent import DataAgent
 from ..routing_agent import RoutingAgent
+from ..document_agent.document_agent import DocumentAgent
+from dataclasses import asdict
 from ..LLM.LLM import llm_query_orchestration as get_response
-
-
-# #gets response from LLM
-# def get_response(prompt, model="llama3.1:8b"):
-    # response: ChatResponse = chat(
-        # model=model, 
-        # messages=[{'role': 'system', 'content': prompt}],
-        # format="json",
-        # options={"temperature":0.075}
-    # )
-    # return response.message.content
 
 #returns required data for answering response
 def interpret_query(query):
@@ -30,7 +21,12 @@ def interpret_query(query):
             "need_routing_data":{
                 "Description":"The message specifies a location and asks for directions or routing to it.",
                 "Value":"NULL"
-            }
+            },
+            #added code block
+            "need_document_data":{
+                "Description":"To answer this question, we need information from preparedness documents (emergency kit, shelter-in-place, evacuation, pets, supplies, etc.).",
+                "Value":"NULL"
+            }            
         }
     }
     
@@ -55,47 +51,59 @@ If the question is unrelated to natural disasters, shelters, or emergencies, all
     response=get_response(prompt)
     need_shelter_data=False
     need_routing_data=False
+    need_document_data=False
     error=""
     
     #parse data
+    #added document agent to all of this
     if "response" in response:
         response=response["response"]
     try:
         need_shelter_data=response["need_shelter_data"]
         need_routing_data=response["need_routing_data"]
+        need_document_data=response["need_document_data"]
     except:
         return [False, False], response, "Missing data key(s)."
     try:
         need_shelter_data=need_shelter_data["value"]
         need_routing_data=need_routing_data["value"]
+        need_document_data=need_document_data["value"]
         if type(need_shelter_data) is str:
             need_shelter_data=need_shelter_data=="true"
         if type(need_routing_data) is str:
             need_routing_data=need_routing_data=="true"
+        if type(need_document_data) is str:
+            need_document_data=need_document_data=="true"
     except:
         error="No value key"
     
-    return [need_shelter_data, need_routing_data], response, error
+    return [need_shelter_data, need_routing_data, need_document_data], response, error
 
 def test_queries():
     tests=[
+        #Asking for document data
+        {"query":"Should I make an emergency kit?",
+            "desired":[[False, False, True]],
+            "acceptable":[],
+            "trials":50
+        },
         #Asking for only shelter data
         {"query":"Where are the nearest disaster shelters?",
-            "desired":[[True,False]],
-            "acceptable":[[True,True]],
-            "trials":40
+            "desired":[[True,False,False]],
+            "acceptable":[[True,True,False]],
+            "trials":50
         },
         #Asking for routing data
         {"query":"How do I get to the Storrs disaster shelter?",
-            "desired":[[True, True]],
+            "desired":[[True, True, False]],
             "acceptable":[],
-            "trials":40
+            "trials":50
         },
         #Random unrelated question
         {"query":"I really really like pigs. Do you like pigs?",
-            "desired":[[False,False]],
+            "desired":[[False,False,False]],
             "acceptable":[],
-            "trials":20
+            "trials":25
         },
     ]
     
@@ -119,6 +127,10 @@ def test_queries():
             print("Need routing agent")
         else:
             print("Don't need routing agent")
+        if desired_outputs[0][2]:
+            print("Need document agent")
+        else:
+            print("Don't need document agent")
         print("")
         
         for i in range(trials):
@@ -154,6 +166,14 @@ def main(query, lat, lon):
         print("Response:",response)
         return
         
+    #added code block
+    doc_context = None
+    if output[2]:
+        idx_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "document_agent", ".doc_index"))
+        doc_agent = DocumentAgent(index_dir=idx_dir)
+        doc_result = doc_agent.answer(query)
+        doc_context = asdict(doc_result)
+
     shelter_data = None
     if output[0]:
         agent = DataAgent(base_path="src/data_agent/data")
@@ -179,6 +199,9 @@ def main(query, lat, lon):
             "shelters": []
         }
 
+        #added code block
+        if doc_context is not None:
+            combined_result["document_context"] = doc_context
 
         routing_lookup = {route["shelter_name"]: route for route in routing_result["routes"]}
         
@@ -213,5 +236,11 @@ def main(query, lat, lon):
         print(f"Routing not triggered. need_routing, but no shelter data.")
         return
     
+    #added code block to return document context if shelter data isn't needed but document data is
+    if doc_context is not None and not shelter_data:
+        result = {"query": query, "document_context": doc_context}
+        print(json.dumps(result, indent=2))
+        return result
+
     print(json.dumps(shelter_data, indent=2))
     return shelter_data

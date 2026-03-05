@@ -62,5 +62,63 @@ def llm_query_orchestration(prompt):
             print("Invalid JSON generated in orchestration, trying again")
     return None
     
+#added document agent query function 
+def llm_query_document(query, excerpts, temp=0.0):
+    """
+    query: str
+    excerpts: list of dicts like:
+      [{"i":1,"title":"...","source":"...","chunk_id":"...","text":"..."}, ...]
+      (you can pass whatever, we just stringify it)
+    Returns dict:
+      {"summary_bullets":[...], "confidence":"high|medium|low", "confidence_reason":"..."}
+    """
+    prompt = f"""
+You are the Document Agent for a CT disaster resilience app.
+
+RULES:
+- Use ONLY the provided excerpts.
+- Do NOT add new facts.
+- If excerpts are insufficient, say so via low confidence.
+- Return ONLY valid JSON.
+
+User query:
+{query}
+
+Excerpts (JSON):
+{json.dumps(excerpts, ensure_ascii=False, indent=2)}
+
+Return JSON exactly with:
+{{
+  "summary_bullets": ["..."],
+  "confidence": "high|medium|low",
+  "confidence_reason": "..."
+}}
+"""
+
+    attempts = 0
+    while attempts < 10:
+        attempts += 1
+        try:
+            resp = llm_query(
+                [{"role": "system", "content": prompt}],
+                True,
+                temp
+            )
+            obj = json.loads(resp)
+            bullets = obj.get("summary_bullets", [])
+            conf = obj.get("confidence", "medium")
+            reason = obj.get("confidence_reason", "")
+            if not isinstance(bullets, list):
+                bullets = []
+            bullets = [str(b) for b in bullets][:6]
+            return {"summary_bullets": bullets, "confidence": str(conf), "confidence_reason": str(reason)}
+        except Exception:
+            pass
+
+    return {"summary_bullets": [], "confidence": "low", "confidence_reason": "Document LLM summarization failed; using fallback excerpts only."}
+
+
+
+
 if __name__=="__main__":
     print(llm_query_orchestration("Just testing this out!"))

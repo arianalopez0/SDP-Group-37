@@ -5,6 +5,7 @@ from src.orchestration.orchestration import main as run_orchestration
 from src.LLM.LLM import llm_query_response as get_response
 
 def generate_response(query, context):
+    #Changed prompt to reflect new response agent role and to include document context if shelter data isn't needed but document data is
     prompt = f"""
     You are a calm, friendly emergency response assistant.
 
@@ -24,16 +25,12 @@ def generate_response(query, context):
         prompt = f"""
         You are a calm, friendly emergency response assistant.
 
-        Start your response with a short, warm introduction (2–3 sentences) that:
+        If the conversation has just started, begin your response with a short, warm introduction (2–3 sentences) that:
         - Acknowledges the user's request
-        - Explains that you checked nearby shelters based on their location
         - Reassures them that the information is meant to help them make a decision
-
-        Example opening tone (do not copy exactly):
-        "I looked up shelters near your location to help you find the safest options.
-         Here are the closest places you can access right now."
-
-        Then present the shelter list.
+        Otherwise, an introduction is not always necessary.
+        
+        Output plain text only. Do NOT output JSON and do NOT invent information.
 
         User question:
         "{query}"
@@ -42,6 +39,7 @@ def generate_response(query, context):
         {{
         "query": "...",
         "user_location": {{ ... }},
+        "document_context": {{ ... }},
         "shelters": [
             {{
             "name": "...",
@@ -57,13 +55,26 @@ def generate_response(query, context):
                 }}
               ]
             }}
+        
+        The JSON context may contain:
+            - shelter information/directions under "shelters"
+            - preparedness document information under "document_context"
+        
+        If shelters are present:
+            - Start with a short, warm introduction (2-3 sentences)
+            - Then summarize EACH shelter listed, with white space between entries.
+            - If route information exists, include brief directions
 
+        If document_context is present:
+            - Add a section titled: "Preparedness Guidance (CT Guide)"
+            - Use ONLY document_context.summary_bullets
+            - If summary_bullets is empty, use document_context.answer_snippets
+            - Do NOT add advice not supported by excerpts
+            - Add a "Sources" section listing doc_title and source URL
 
-        Your job:
-        - Summarize EACH shelter listed
-        - If route information is present, include brief directions or travel details for that shelter
-        - Output one shelter per line in plain text
-        - DO NOT output JSON and DO NOT add or invent any information
+        If ONLY document_context exists (no shelters):
+            - Write a short intro acknowledging the question
+            - Then show the preparedness guidance section and sources
         
         Full Context JSON:
         {json.dumps(context, indent=2)}
