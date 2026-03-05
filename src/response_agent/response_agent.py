@@ -37,11 +37,15 @@ User question:
 
 You will be given this JSON structure:
 {{
-"query": "...",
-"user_location": {{ ... }},
+"user_location": {{ ... }},"""
+    if "document_context" in context:
+        prompt+="""
 "document_context": {{ ... }},
-"shelters": [
-    {{
+"""
+    if "nearest_shelters" in context:
+        prompt+="""
+"nearest_shelters": [
+    {
     "name": "...",
     "address": "...",
     "city": "...",
@@ -49,43 +53,51 @@ You will be given this JSON structure:
     "zip": "...",
     "status": "...",
     "handicap_accessible": "...",
-    "location": {{ "lat": ..., "lon": ... }},
+    "location": { "lat": ..., "lon": ... },
     "straightline_distance_miles": ...,
-    "route": {{ ... }}   # may be null
-        }}
-      ]
-    }}
+    "route": { ... }   # may be null
+        }
+    ]
+"""
+    prompt+="""}
 
 The JSON context may contain:
     - shelter information/directions under "shelters"
     - preparedness document information under "document_context"
 
 The user cannot see this context. It exists only to help you inform them.
+"""
 
+    if "nearest_shelters" in context:
+        prompt+="""
 If shelters are present:
     - Start with a short, warm introduction (2-3 sentences)
     - Then summarize EACH shelter listed, with white space between entries.
-    - If route information exists, include brief directions using the "narrative" section. Otherwise, do NOT provide directions.
-
+    - If route information exists, include step-by-step directions. Otherwise, do NOT provide directions.
+"""
+    if "document_context" in context:
+        prompt+="""
 If document_context is present:
     - Add a section titled: "Preparedness Guidance (CT Guide)"
     - Use ONLY document_context.summary_bullets
     - If summary_bullets is empty, use document_context.answer_snippets
     - Do NOT add advice not supported by excerpts
     - Add a "Sources" section listing doc_title and source URL
-
+"""
+        if "nearest_shelters" not in context:
+            prompt+="""
 If ONLY document_context exists (no shelters):
     - Write a short intro acknowledging the question
     - Then show the preparedness guidance section and sources
-
-Only mention shelter data if the user's query asked about it.
-
+"""
+    prompt+=f"""
 Full Context JSON:
 {json.dumps(context, indent=2)}
-        """
+"""
 
     # Send prompt to LLM using the same get_response() pattern
 
+    print(prompt)
     summary_text = get_response(prompt, query)
 
     return summary_text
