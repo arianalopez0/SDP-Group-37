@@ -9,17 +9,6 @@ from ..document_agent.document_agent import DocumentAgent
 from dataclasses import asdict
 from ..LLM.LLM import llm_query_orchestration as get_response
 
-
-# #gets response from LLM
-# def get_response(prompt, model="llama3.1:8b"):
-    # response: ChatResponse = chat(
-        # model=model, 
-        # messages=[{'role': 'system', 'content': prompt}],
-        # format="json",
-        # options={"temperature":0.075}
-    # )
-    # return response.message.content
-
 #returns required data for answering response
 def interpret_query(query):
     json_template={
@@ -92,23 +81,29 @@ If the question is unrelated to natural disasters, shelters, or emergencies, all
 
 def test_queries():
     tests=[
+        #Asking for document data
+        {"query":"Should I make an emergency kit?",
+            "desired":[[False, False, True]],
+            "acceptable":[],
+            "trials":50
+        },
         #Asking for only shelter data
         {"query":"Where are the nearest disaster shelters?",
-            "desired":[[True,False]],
-            "acceptable":[[True,True]],
-            "trials":40
+            "desired":[[True,False,False]],
+            "acceptable":[[True,True,False]],
+            "trials":50
         },
         #Asking for routing data
         {"query":"How do I get to the Storrs disaster shelter?",
-            "desired":[[True, True]],
+            "desired":[[True, True, False]],
             "acceptable":[],
-            "trials":40
+            "trials":50
         },
         #Random unrelated question
         {"query":"I really really like pigs. Do you like pigs?",
-            "desired":[[False,False]],
+            "desired":[[False,False,False]],
             "acceptable":[],
-            "trials":20
+            "trials":25
         },
     ]
     
@@ -132,6 +127,10 @@ def test_queries():
             print("Need routing agent")
         else:
             print("Don't need routing agent")
+        if desired_outputs[0][2]:
+            print("Need document agent")
+        else:
+            print("Don't need document agent")
         print("")
         
         for i in range(trials):
