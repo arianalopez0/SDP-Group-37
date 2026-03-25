@@ -134,20 +134,10 @@ function MapPage({ sharedRawData, mapFlash }: { sharedRawData: any; mapFlash: bo
   const [response, setResponse] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false);
   const activeData = sharedRawData ?? rawData;
   const center = useMemo(() => getCenter(activeData) ?? [41.8111, -72.2484] as Coord, [activeData]);
   const shelters = useMemo(() => getShelters(activeData), [activeData]);
   const markerColors = ["#e63946", "#f4a261", "#2a9d8f", "#457b9d", "#8338ec"];
-
-  function useMyLocation() {
-    if (!navigator.geolocation) { setGeoError("Geolocation not supported by your browser."); return; }
-    setGeoLoading(true); setGeoError("");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { setStartLocation(`${pos.coords.latitude},${pos.coords.longitude}`); setGeoLoading(false); },
-      () => { setGeoError("Could not get location. Check browser permissions."); setGeoLoading(false); }
-    );
-  }
 
   async function handleSubmit() {
     if (!query.trim()) return;
