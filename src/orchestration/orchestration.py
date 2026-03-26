@@ -14,6 +14,10 @@ def interpret_query(query):
     json_template={
         "Message":query,
         "Response":{
+            "allow_emergency_response":{
+            "Description":"True if the message is related to disasters, emergency preparedness, shelters, evacuation, safety guidance, or emergency routing. False if the message is unrelated, casual, random, or outside the app's purpose.",
+            "Value":"NULL"
+            },
             "need_shelter_data":{
                 "Description":"The message asks for info about disaster shelter locations or services.",
                 "Value":"NULL"
@@ -34,21 +38,44 @@ def interpret_query(query):
     
     prompt=f"""
 <role>
-This is part of a chatbot app created to help users get information about natural disasters and disaster shelters.
+This is part of a chatbot app created to help users get information about natural disasters, emergency preparedness, evacuation, shelters, and disaster routing.
 Your job is to fill in a JSON template meticulously, matching the format EXACTLY, based on a message's required information.
-The data we need is "need_shelter_data" and "need_routing_data".
-To complete these, replace any instances of "NULL" with "True" or "False".
-Do not change any other values besides "NULL" in the response.
-Do not write anything outside of the JSON response, and make sure all opening brackets are closed.
-If the question is unrelated to natural disasters, shelters, or emergencies, all "NULL" values should be changed to "False".
+To complete the template, replace any instances of "NULL" with "True" or "False".
+Do not change any other values besides "NULL".
+Do not write anything outside of the JSON response.
 </role>
+
+<instructions>
+Set "allow_emergency_response" to True only if the message is relevant to:
+- natural disasters
+- emergency preparedness
+- evacuation
+- shelter information
+- emergency routing/directions
+- emergency safety guidance
+
+Set "allow_emergency_response" to False if the message is:
+- unrelated
+- casual conversation
+- random small talk
+- jokes or nonsense
+- questions outside the app's emergency/disaster purpose
+
+If "allow_emergency_response" is False, then all other fields must also be False.
+
+Set "need_shelter_data" to True if the user is asking about disaster shelters or shelter services.
+Set "need_routing_data" to True if the user is asking for directions/routes/navigation.
+Set "need_document_data" to True if the user is asking for preparedness or emergency guidance from official documents.
+</instructions>
+
 <json_template>
 {json.dumps(json_template)}
 </json_template>
-    """
+"""
         
     #get response based on prompt
     response=get_response(prompt)
+    allow_emergency_response=True
     need_shelter_data=False
     need_routing_data=False
     need_document_data=False
@@ -59,15 +86,19 @@ If the question is unrelated to natural disasters, shelters, or emergencies, all
     if "response" in response:
         response=response["response"]
     try:
+        allow_emergency_response=response["allow_emergency_response"]
         need_shelter_data=response["need_shelter_data"]
         need_routing_data=response["need_routing_data"]
         need_document_data=response["need_document_data"]
     except:
-        return [False, False], response, "Missing data key(s)."
+        return [False, False, False, False], response, "Missing data key(s)."
     try:
+        allow_emergency_response=allow_emergency_response["value"]
         need_shelter_data=need_shelter_data["value"]
         need_routing_data=need_routing_data["value"]
         need_document_data=need_document_data["value"]
+        if type(allow_emergency_response) is str:
+            allow_emergency_response=allow_emergency_response=="true"
         if type(need_shelter_data) is str:
             need_shelter_data=need_shelter_data=="true"
         if type(need_routing_data) is str:
@@ -77,7 +108,7 @@ If the question is unrelated to natural disasters, shelters, or emergencies, all
     except:
         error="No value key"
     
-    return [need_shelter_data or need_routing_data, need_routing_data, need_document_data], response, error
+    return [allow_emergency_response, need_shelter_data, need_routing_data, need_document_data], response, error
 
 def test_queries():
     tests=[
@@ -165,23 +196,47 @@ def main(query, lat, lon):
         print("Error in interpret_query:",error)
         print("Response:",response)
         return
-        
+    
+    #added for guardrail context in case of off-topic queries
+
+    allow_emergency_response = output[0]
+    need_shelter_data = output[1]
+    need_routing_data = output[2]
+    need_document_data = output[3]
+
+    if not allow_emergency_response:
+        return {
+            "query": query,
+            "guardrail_context": {
+                "blocked": True,
+                "reason": "off_topic",
+                "allowed_topics": [
+                    "disaster shelters",
+                    "evacuation",
+                    "emergency preparedness",
+                    "routes to shelters",
+                    "emergency supply kits",
+                    "shelter-in-place guidance"
+                ]
+            }
+        }
+
     #added code block
     doc_context = None
-    if output[2]:
+    if need_document_data:
         idx_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "document_agent", ".doc_index"))
         doc_agent = DocumentAgent(index_dir=idx_dir)
         doc_result = doc_agent.answer(query)
         doc_context = asdict(doc_result)
 
     shelter_data = None
-    if output[0]:
+    if need_shelter_data:
         agent = DataAgent(base_path="src/data_agent/data")
         shelter_data = agent.handle_query(lat=lat, lon=lon, state="CT")
     else:
         print("Data agent not necessary")
 
-    if output[1] and shelter_data:
+    if need_routing_data and shelter_data:
         print("Starting routing agent...")
         shelters_for_routing = {}
         for shelter in shelter_data["nearest_shelters"]:
@@ -232,7 +287,7 @@ def main(query, lat, lon):
         print("="*50)
         print(json.dumps(combined_result, indent=2))
         return combined_result
-    elif output[1]:
+    elif need_routing_data:
         print(f"Routing not triggered. need_routing, but no shelter data.")
         return
     

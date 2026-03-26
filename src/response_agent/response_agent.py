@@ -5,7 +5,29 @@ from src.orchestration.orchestration import main as run_orchestration
 from src.LLM.LLM import llm_query_response as get_response
 
 def generate_response(query, context):
-    #Changed prompt to reflect new response agent role and to include document context if shelter data isn't needed but document data is
+    #Changed prompt to add guardrail context handling and to better instruct the model on how to use the context information. The prompt is designed to be flexible based on what information is available in the context.
+    if "guardrail_context" in context and context["guardrail_context"].get("blocked"):
+        allowed_topics = context["guardrail_context"].get("allowed_topics", [])
+        topics_text = ", ".join(allowed_topics)
+
+        prompt = f"""
+You are a calm, polite emergency preparedness assistant.
+
+The user's message is outside the supported scope of this app.
+
+User question:
+"{query}"
+
+Your job:
+- Politely explain that this chatbot is designed only for disaster preparedness, emergency shelters, routing to shelters, evacuation, and official emergency guidance
+- Do not answer the off-topic question itself
+- Briefly redirect the user to supported topics
+- Mention these supported topics naturally: {topics_text}
+- Keep the response short, polite, and helpful
+- Output plain text only
+"""
+        return get_response(prompt, query)
+
     prompt = f"""
 You are a calm, friendly emergency response assistant.
 
@@ -21,6 +43,10 @@ Your job:
 - Be polite and helpful, the user may be in a stressful or life-threatening situation
 - DO NOT output JSON and DO NOT add or invent any information
     """
+
+
+
+
     if len(context)>0:
         prompt = f"""
 You are a calm, friendly emergency response assistant.

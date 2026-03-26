@@ -5,7 +5,7 @@ from src.response_agent.response_agent import generate_response
 if __name__=="__main__":
     #orchestration.test_queries()
     #default query
-    query="What are the routes to the closest disaster shelters?"
+    query="What should be in an emergency preparedness kit?"
     
     # allow user to pass query from terminal
     if len(sys.argv) == 2:
