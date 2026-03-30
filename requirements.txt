@@ -2,9 +2,14 @@ streamlit
 streamlit-folium
 osmnx
 networkx
-pickle
 ollama
 geopandas 
 fiona 
 shapely 
 pyproj
+uvicorn
+geocoder
+fastapi
+geopy
+pydantic
+polyline
