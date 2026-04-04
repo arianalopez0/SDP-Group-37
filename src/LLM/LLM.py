@@ -2,27 +2,25 @@ import json
 import requests
 
 with open("secrets.env") as f:
-    deepinfra_token=json.loads(f.read())["token"]
+    openai_token=json.loads(f.read())["token"]
 conversation=[]
 
 headers={
     "Content-Type":"application/json",
-    "Authorization":"Bearer "+deepinfra_token
+    "Authorization":"Bearer "+openai_token
 }
 
 def llm_query(messages,return_json=False,temp=0.075):
     json_data = {
-        "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
-        "messages":messages,
-        "properties":{
-            "temperature":temp,
-        }
+        "model": "gpt-5.4-nano",
+        "input":messages,
+        "temperature":temp
     }
     if return_json:
-        json_data["properties"]["response_format"]="json"
+        json_data["text"]={"format":{"type":"json_object"}}
 
-    response=requests.post("https://api.deepinfra.com/v1/openai/chat/completions",headers=headers,json=json_data)
-    return json.loads(response.content)["choices"][0]["message"]["content"]
+    response=requests.post("https://api.openai.com/v1/responses",headers=headers,json=json_data)
+    return json.loads(response.content)["output"][0]["content"][0]["text"]
 
 def llm_query_response(prompt,query):
     if len(conversation)>16:

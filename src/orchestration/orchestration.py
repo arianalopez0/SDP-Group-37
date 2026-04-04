@@ -19,7 +19,7 @@ def interpret_query(query):
                 "Value":"NULL"
             },
             "need_routing_data":{
-                "Description":"The message specifies a location and asks for directions or routing to it.",
+                "Description":"The message asks for directions or routing to a specific location.",
                 "Value":"NULL"
             },
             #added code block
@@ -40,7 +40,7 @@ The data we need is "need_shelter_data" and "need_routing_data".
 To complete these, replace any instances of "NULL" with "True" or "False".
 Do not change any other values besides "NULL" in the response.
 Do not write anything outside of the JSON response, and make sure all opening brackets are closed.
-If the question is unrelated to natural disasters, shelters, or emergencies, all "NULL" values should be changed to "False".
+If the question is unrelated to natural disasters, shelters, directions, or emergencies, all "NULL" values should be changed to "False".
 </role>
 <json_template>
 {json.dumps(json_template)}
