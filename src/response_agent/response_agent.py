@@ -75,6 +75,11 @@ If shelters are present:
     - Start with a short, warm introduction (2-3 sentences)
     - Then summarize EACH shelter listed, with white space between entries.
     - If route information exists, include step-by-step directions. Otherwise, do NOT provide directions.
+    - If a shelter's "flood_warnings" field is present and non-null, warn the user clearly.
+    - "High" risk zones (A/V zones): strongly caution that this route passes through an active FEMA flood hazard area
+    - "Moderate" risk: note that part of the route is in a moderate flood risk area
+    - "Low" risk: mention briefly but don't alarm
+    - If multiple shelters are available with lower risk routes, suggest those first.
 """
     if "document_context" in context:
         prompt+="""
