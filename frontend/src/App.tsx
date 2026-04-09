@@ -43,7 +43,6 @@ function getShelters(data: any): Shelter[] {
 
 function getRoute(shelter: Shelter, userCoord?: Coord): Coord[] | null {
   const coords = shelter.route?.path_coordinates;
-  console.log(`[${shelter.name}] path_coordinates:`, coords); 
   if (!Array.isArray(coords) || coords.length === 0) return null;
   const pts = coords.filter((c: any) => Array.isArray(c) && c.length === 2).map((c: any) => [c[0], c[1]] as Coord);
   return userCoord ? [userCoord, ...pts] : pts;
@@ -130,6 +129,16 @@ const hs: Record<string, React.CSSProperties> = {
 function MapPage({ sharedRawData, mapFlash }: { sharedRawData: any; mapFlash: boolean }) {
   const [query, setQuery] = useState("");
   const [startLocation, setStartLocation] = useState("Storrs, CT");
+  useEffect(() => {
+    fetch("http://localhost:8000/guess-location")
+      .then(res => res.json())
+      .then(data => {
+        if (data?.location) {
+          setStartLocation(data.location);
+        }
+     })
+      .catch(() => {}); 
+  }, []);
   const [rawData, setRawData] = useState<any>(null);
   const [response, setResponse] = useState("");
   const [error, setError] = useState("");
@@ -244,9 +253,9 @@ function MapPage({ sharedRawData, mapFlash }: { sharedRawData: any; mapFlash: bo
         <MapContainer center={center as Coord} zoom={13} style={{ width: "100%", height: "100%" }}>
           <MapRecenter center={center as Coord} />
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          />
+          /> 
           {activeData && (
             <Marker position={center as Coord} icon={L.divIcon({
               className: "",
@@ -324,8 +333,7 @@ const ms: Record<string, React.CSSProperties> = {
   shelterMeta: { fontSize: 11, color: "#7a7f94", lineHeight: 1.5 },
   mapWrap: { flex: 1, position: "relative", overflow: "hidden", height: "100%" },
   mapPlaceholder: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none", zIndex: 500 },
-  mapPlaceholderText: { background: "rgba(13,15,23,0.7)", color: "#4a4f62", fontSize: 13, padding: "8px 16px", borderRadius: 8, border: "1px solid #1e2130" },
-};
+  mapPlaceholderText: { background: "rgba(255,255,255,0.85)", color: "#555", fontSize: 13, padding: "8px 16px", borderRadius: 8, border: "1px solid #ccc" },};
 
 // ── About Page ────────────────────────────────────────────────────────────────
 function AboutPage() {
@@ -382,7 +390,18 @@ export default function App() {
   const [page, setPage] = useState<Page>("home");
   const [sharedRawData, setSharedRawData] = useState<any>(null);
   const [mapFlash, setMapFlash] = useState(false);
-  const [startLocation] = useState("Storrs, CT");
+  const [startLocation, setStartLocation] = useState("Storrs, CT");
+
+  useEffect(() => {
+    fetch("http://localhost:8000/guess-location")
+      .then(res => res.json())
+      .then(data => {
+        if (data?.location) {
+          setStartLocation(data.location);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   function handleNewRawData(data: any) {
     setSharedRawData(data);

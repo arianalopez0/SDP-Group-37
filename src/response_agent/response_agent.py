@@ -41,6 +41,7 @@ User question:
 Your job:
 - Respond to the user in a way that best answers their questions
 - Be polite and helpful, the user may be in a stressful or life-threatening situation
+- Do not assume the user is in immediate danger, only use the information they've given you.
 - DO NOT output JSON and DO NOT add or invent any information
     """
 
