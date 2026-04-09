@@ -23,7 +23,7 @@ def interpret_query(query):
                 "Value":"NULL"
             },
             "need_routing_data":{
-                "Description":"The message asks for directions or routing to a specific location.",
+                "Description":"The message asks for directions, routing, or how to get to somewhere.",
                 "Value":"NULL"
             },
             #added code block
@@ -234,6 +234,7 @@ def main(query, lat, lon):
     shelter_data = None
     if need_shelter_data:
         agent = DataAgent(base_path="src/data_agent/data")
+        flood_gdf = agent.get_hazard_layer("fema_flood")
         shelter_data = agent.handle_query(lat=lat, lon=lon, state="CT")
     else:
         print("Data agent not necessary")
@@ -265,6 +266,13 @@ def main(query, lat, lon):
         # Merge each shelter's data with its routing info
         for shelter in shelter_data["nearest_shelters"]:
             shelter_name = shelter["name"]
+            route_info = routing_lookup.get(shelter_name, None)
+
+            flood_warnings = []
+            if route_info and flood_gdf is not None:
+                path = route_info.get("path_coordinates", [])
+                flood_warnings = RoutingAgent.check_route_flood_risk(path, flood_gdf)
+
             combined_shelter = {
                 # data agent
                 "name": shelter["name"],
@@ -280,14 +288,15 @@ def main(query, lat, lon):
                 },
                 "straightline_distance_miles": shelter["straightline_distance_miles"],
                 # routing agent
-                "route": routing_lookup.get(shelter_name, None)
+                "route": routing_lookup.get(shelter_name, None),
+                "flood_warnings": flood_warnings or None,
             }
             combined_result["shelters"].append(combined_shelter)
 
         print("\n" + "="*50)
         print("COMBINED RESULT")
         print("="*50)
-        print(json.dumps(combined_result, indent=2))
+        # print(json.dumps(combined_result, indent=2))
         return combined_result
     elif need_routing_data:
         print(f"Routing not triggered. need_routing, but no shelter data.")
