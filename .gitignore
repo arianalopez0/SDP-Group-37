@@ -35,6 +35,7 @@ __pycache__/
 *.pyd
 
 document_agent/.doc_index/
+node_modules/
 
 # Ignore .env
 *.env
