@@ -10,6 +10,8 @@ data/raw/*.cpg
 
 # Ignore all hazard data folders and large files
 data-agent/data/hazards/
+src/data_agent/data/hazards/
+
 
 # Ignore large geospatial and data files
 data-agent/*.zip
@@ -33,6 +35,7 @@ __pycache__/
 *.pyd
 
 document_agent/.doc_index/
+node_modules/
 
 # Ignore .env
 *.env
