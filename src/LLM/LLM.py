@@ -10,31 +10,32 @@ headers={
     "Authorization":"Bearer "+openai_token
 }
 
-def llm_query(messages,return_json=False,temp=0.075):
+def llm_query(messages,return_json=False,temp=0.075,verbosity="medium"):
     json_data = {
         "model": "gpt-5.4-nano",
         "input":messages,
-        "temperature":temp
+        "temperature":temp,
     }
     if return_json:
         json_data["text"]={"format":{"type":"json_object"}}
+    else:
+        json_data["text"]={"verbosity":verbosity}
 
     response=requests.post("https://api.openai.com/v1/responses",headers=headers,json=json_data)
     return json.loads(response.content)["output"][0]["content"][0]["text"]
 
 def llm_query_response(prompt,query):
-    if len(conversation)>16:
-        conversation.pop(0)
-        conversation.pop(0)
-    conversation.append({"user":query})
-    
     response=llm_query([
             {"role": "system", "content": f"""You are an emergency response summarization assistant.
 Here are the previous messages in the conversation: 
 {json.dumps(conversation)}"""},
             {"role": "user", "content": prompt}
-        ]).strip()
+        ],False,0.075,"low").strip()
     
+    if len(conversation)>16:
+        conversation.pop(0)
+        conversation.pop(0)
+    conversation.append({"user":query})
     conversation.append({"you":response})
     return response
 
@@ -44,7 +45,8 @@ def llm_query_orchestration(prompt):
         attempts+=1
         try:
             response=llm_query([
-                    {"role": "system", "content": prompt}
+                    {"role": "system", "content": prompt},
+                    {"role": "system", "content": f"Here are the previous messages in the conversation:\n{json.dumps(conversation)}"},
                 ],
                 True,0)
             response_dict=json.loads(response.lower())
