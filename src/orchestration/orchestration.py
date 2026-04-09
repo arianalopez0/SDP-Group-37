@@ -19,7 +19,7 @@ def interpret_query(query):
                 "Value":"NULL"
             },
             "need_routing_data":{
-                "Description":"The message asks for directions or routing to a specific location.",
+                "Description":"The message asks for directions, routing, or how to get to somewhere.",
                 "Value":"NULL"
             },
             #added code block

@@ -73,7 +73,7 @@ The user cannot see this context. It exists only to help you inform them.
         prompt+="""
 If shelters are present:
     - Start with a short, warm introduction (2-3 sentences)
-    - Then summarize EACH shelter listed, with white space between entries.
+    - Then summarize EACH shelter listed, with clear bulleted formatting.
     - If route information exists, include step-by-step directions. Otherwise, do NOT provide directions.
     - If a shelter's "flood_warnings" field is present and non-null, warn the user clearly.
     - "High" risk zones (A/V zones): strongly caution that this route passes through an active FEMA flood hazard area
