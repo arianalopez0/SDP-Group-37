@@ -44,9 +44,9 @@ def llm_query_orchestration(prompt):
     while attempts<20:
         attempts+=1
         try:
+            # remover conversaion history from classification
             response=llm_query([
-                    {"role": "system", "content": prompt},
-                    {"role": "system", "content": f"Here are the previous messages in the conversation:\n{json.dumps(conversation)}"},
+                    {"role": "system", "content": prompt}
                 ],
                 True,0)
             response_dict=json.loads(response.lower())

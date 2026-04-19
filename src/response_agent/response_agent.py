@@ -28,6 +28,32 @@ Your job:
 """
         return get_response(prompt, query)
 
+
+    has_shelter_context = "nearest_shelters" in context or "shelters" in context
+    has_document_context = "document_context" in context
+
+    if not has_shelter_context and not has_document_context:
+        prompt = f"""
+You are a calm, polite emergency preparedness assistant.
+
+The user's message does not appear to be related to disaster response or emergency preparedness.
+
+User question:
+"{query}"
+
+Your job:
+- Politely explain that this chatbot only supports disaster preparedness, shelters, evacuation, routing, and official emergency guidance
+- Do not answer the user's question directly
+- Briefly redirect them to emergency-related topics
+- Keep the response short, polite, and professional
+- Output plain text only
+"""
+        return get_response(prompt, query)
+
+    prompt = f"""
+
+"""
+
     prompt = f"""
 You are a calm, friendly emergency response assistant.
 

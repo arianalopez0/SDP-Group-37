@@ -38,41 +38,57 @@ def interpret_query(query):
     
     prompt=f"""
 <role>
-This is part of a chatbot app created to help users get information about natural disasters, emergency preparedness, evacuation, shelters, and disaster routing.
-Your job is to fill in a JSON template meticulously, matching the format EXACTLY, based on a message's required information.
-The data we need is "need_shelter_data" and "need_routing_data".
-To complete these, replace any instances of "NULL" with "True" or "False".
-Do not change any other values besides "NULL" in the response.
-Do not write anything outside of the JSON response, and make sure all opening brackets are closed.
-If the question is unrelated to natural disasters, shelters, directions, or emergencies, all "NULL" values should be changed to "False".
-</role>
-
-<instructions>
-Set "allow_emergency_response" to True only if the message is relevant to:
+This is part of a chatbot app created ONLY to help users with:
 - natural disasters
 - emergency preparedness
 - evacuation
-- shelter information
+- shelters
+- emergency routing
+- official emergency safety guidance
+
+Your job is to fill in the JSON template exactly.
+Replace every "NULL" with either "True" or "False".
+Do not output anything except valid JSON.
+</role>
+
+<instructions>
+Set "allow_emergency_response" to True ONLY if the user's message is directly about:
+- disasters
+- emergency preparedness
+- shelters
+- evacuation
 - emergency routing/directions
-- emergency safety guidance
+- official emergency guidance
 
-Set "allow_emergency_response" to False if the message is:
-- unrelated
+Set "allow_emergency_response" to False for:
+- food or drink questions
+- entertainment
+- personal opinions
+- jokes
 - casual conversation
-- random small talk
-- jokes or nonsense
-- questions outside the app's emergency/disaster purpose
+- school help unrelated to emergencies
+- coding help unrelated to emergencies
+- random trivia
+- nonsense
+- any request outside this app's emergency/disaster purpose
 
-If "allow_emergency_response" is False, then all other fields must also be False.
+If "allow_emergency_response" is False, then:
+- need_shelter_data must be False
+- need_routing_data must be False
+- need_document_data must be False
 
-Set "need_shelter_data" to True if the user is asking about disaster shelters or shelter services.
-Set "need_routing_data" to True if the user is asking for directions/routes/navigation.
-Set "need_document_data" to True if the user is asking for preparedness or emergency guidance from official documents.
+Set "need_shelter_data" to True if the user asks about shelters or shelter services.
+Set "need_routing_data" to True if the user asks for directions, routes, or navigation.
+Set "need_document_data" to True if the user asks for emergency preparedness or official safety guidance from documents.
 </instructions>
 
 <json_template>
 {json.dumps(json_template)}
 </json_template>
+
+<message>
+{query}
+</message>
 """
         
     #get response based on prompt
