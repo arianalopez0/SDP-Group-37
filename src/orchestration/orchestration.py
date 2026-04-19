@@ -93,6 +93,11 @@ Set "need_document_data" to True if the user asks for emergency preparedness or 
         
     #get response based on prompt
     response=get_response(prompt)
+    try:
+        if isinstance(response, str):
+            response = json.loads(response)
+    except:
+        return [False, False, False, False], response, "Invalid JSON from LLM"
     allow_emergency_response=True
     need_shelter_data=False
     need_routing_data=False
@@ -104,10 +109,10 @@ Set "need_document_data" to True if the user asks for emergency preparedness or 
     if "response" in response:
         response=response["response"]
     try:
-        allow_emergency_response=response["allow_emergency_response"]
-        need_shelter_data=response["need_shelter_data"]
-        need_routing_data=response["need_routing_data"]
-        need_document_data=response["need_document_data"]
+        allow_emergency_response = response["Response"]["allow_emergency_response"]["Value"]
+        need_shelter_data = response["Response"]["need_shelter_data"]["Value"]
+        need_routing_data = response["Response"]["need_routing_data"]["Value"]
+        need_document_data = response["Response"]["need_document_data"]["Value"]
     except:
         return [False, False, False, False], response, "Missing data key(s)."
     try:
