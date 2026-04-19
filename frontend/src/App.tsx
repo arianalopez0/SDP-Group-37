@@ -89,7 +89,7 @@ function HomePage({ setPage }: { setPage: (p: Page) => void }) {
         <div style={hs.alertBadge}>🔴 ACTIVE EMERGENCY TOOL</div>
         <h1 style={hs.h1}>Find Safety.<br />Find Shelter.<br />Find Your Route.</h1>
         <p style={hs.sub}>DisasterRoute CT uses real-time data and AI to guide Connecticut residents to the nearest open shelters during emergencies.</p>
-        <button onClick={() => setPage("map")} style={hs.cta}>Open Shelter Finder →</button>
+        <button onClick={() => setPage("map")} style={hs.cta}>Get Assistance →</button>
       </div>
       <div style={hs.cards}>
         {[
@@ -197,14 +197,6 @@ function MapPage({ sharedRawData, mapFlash }: { sharedRawData: any; mapFlash: bo
         </button>
 
         {error && <div style={ms.errorBox}>{error}</div>}
-        {response && (
-          <div style={ms.responseBox}>
-            <div style={ms.responseLabel}>AI Response</div>
-            <div style={ms.responseText} className="response-md">
-              <ReactMarkdown>{response}</ReactMarkdown>
-            </div>
-          </div>
-        )}
         {shelters.length > 0 && (
           <div style={ms.shelterList}>
             <div style={ms.responseLabel}>Shelters ({shelters.length})</div>
@@ -226,6 +218,14 @@ function MapPage({ sharedRawData, mapFlash }: { sharedRawData: any; mapFlash: bo
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {response && (
+          <div style={ms.responseBox}>
+            <div style={ms.responseLabel}>AI Response</div>
+            <div style={ms.responseText} className="response-md">
+              <ReactMarkdown>{response}</ReactMarkdown>
+            </div>
           </div>
         )}
         {activeData && !getCenter(activeData) && (
