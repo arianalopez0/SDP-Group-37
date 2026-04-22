@@ -28,6 +28,8 @@ Your job:
 """
         return get_response(prompt, query)
 
+
+    # Default prompt when given no context
     prompt = f"""
 You are a calm, friendly emergency response assistant.
 
@@ -47,7 +49,7 @@ Your job:
 
 
 
-
+    # If context given, start a new prompt and add sections to match actual format depending on what info is in context
     if len(context)>0:
         prompt = f"""
 You are a calm, friendly emergency response assistant.
@@ -65,11 +67,11 @@ User question:
 You will be given this JSON structure:
 {{
 "user_location": {{ ... }},"""
-    if "document_context" in context:
+    if "document_context" in context: # Format for doc agent context
         prompt+="""
 "document_context": {{ ... }},
 """
-    if "nearest_shelters" in context or "shelters" in context:
+    if "nearest_shelters" in context or "shelters" in context: # Format for data/routing agent context
         prompt+="""
 "nearest_shelters": [
     {
@@ -86,7 +88,7 @@ You will be given this JSON structure:
         }
     ]
 """
-    prompt+="""}
+    prompt+="""} # More default prompting
 
 The JSON context may contain:
     - shelter information/directions under "shelters"
@@ -95,7 +97,7 @@ The JSON context may contain:
 The user cannot see this context. It exists only to help you inform them.
 """
 
-    if "nearest_shelters" in context or "shelters" in context:
+    if "nearest_shelters" in context or "shelters" in context: # Instructions for data/routing agent context
         prompt+="""
 If shelters are present:
     - Start with a short, warm introduction (2-3 sentences)
@@ -107,7 +109,7 @@ If shelters are present:
     - "Low" risk: mention briefly but don't alarm
     - If multiple shelters are available with lower risk routes, suggest those first.
 """
-    if "document_context" in context:
+    if "document_context" in context: # Instructions for document agent context
         prompt+="""
 If document_context is present:
     - Add a section titled: "Preparedness Guidance (CT Guide)"
@@ -116,7 +118,7 @@ If document_context is present:
     - Do NOT add advice not supported by excerpts
     - Add a "Sources" section listing doc_title and source URL
 """
-        if "nearest_shelters" not in context and "shelters" not in context:
+        if "nearest_shelters" not in context and "shelters" not in context: # Prompt specifically for when doc agent but no data agent
             prompt+="""
 If ONLY document_context exists (no shelters):
     - Write a short intro acknowledging the question
@@ -127,7 +129,8 @@ Full Context JSON:
 {json.dumps(context, indent=2)}
 """
 
-    # Send prompt to LLM using the same get_response() pattern
+    # Final prompt will match context, with instructions for each section when given.
+    # This way, the LLM is not confused by irrelevant instructions 
 
     print(prompt)
     summary_text = get_response(prompt, query)
