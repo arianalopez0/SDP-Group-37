@@ -95,6 +95,8 @@ Set "need_document_data" to True if the user asks for emergency preparedness or 
         
     #get response from LLM
     response=get_response(prompt)
+    if not response:
+        return [False, False, False, False], None, "No response in orchestration"
     allow_emergency_response=True
     need_shelter_data=False
     need_routing_data=False

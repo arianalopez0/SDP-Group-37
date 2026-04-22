@@ -63,7 +63,7 @@ def llm_query_orchestration(prompt):
                 print("Invalid JSON generated in orchestration, trying again")
         except Exception as e:
             print(type(e))
-            print("Invalid JSON generated in orchestration, trying again")
+            print("^ Exception made in orchestration ^")
             break
     # exit if invalid json generated 20 times (shouldn't happen) or other error was detected (most likely connection)
     return None
