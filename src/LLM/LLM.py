@@ -1,6 +1,8 @@
+"""All LLM calls go through here"""
 import json
 import requests
 
+# secrets.env should be a json object with a single key "token" where its value is your openai token
 with open("secrets.env") as f:
     openai_token=json.loads(f.read())["token"]
 conversation=[]
@@ -10,6 +12,7 @@ headers={
     "Authorization":"Bearer "+openai_token
 }
 
+"""Makes a post request to the openai response api with the desired format, verbosity, temperature, and prompts"""
 def llm_query(messages,return_json=False,temp=0.075,verbosity="medium"):
     json_data = {
         "model": "gpt-5.4-nano",
@@ -24,14 +27,16 @@ def llm_query(messages,return_json=False,temp=0.075,verbosity="medium"):
     response=requests.post("https://api.openai.com/v1/responses",headers=headers,json=json_data)
     return json.loads(response.content)["output"][0]["content"][0]["text"]
 
+"""Method used when calling LLM from response agent"""
 def llm_query_response(prompt,query):
     response=llm_query([
             {"role": "system", "content": f"""You are an emergency response summarization assistant.
 Here are the previous messages in the conversation: 
-{json.dumps(conversation)}"""},
-            {"role": "user", "content": prompt}
-        ],False,0.075,"low").strip()
+{json.dumps(conversation)}"""}, # Has access to previous messages
+            {"role": "user", "content": prompt} # prompt sent in from here
+        ],False,0.075,"low").strip() # not json, default temp, low verbosity.
     
+    # record conversation (up to 16 messages)
     if len(conversation)>16:
         conversation.pop(0)
         conversation.pop(0)
@@ -39,8 +44,10 @@ Here are the previous messages in the conversation:
     conversation.append({"you":response})
     return response
 
+"""Method used when calling LLM from orchestration agent"""
 def llm_query_orchestration(prompt):
     attempts=0
+    # Rarely, LLM generates invalid json. Try multiple times in this case.
     while attempts<20:
         attempts+=1
         try:
@@ -51,8 +58,9 @@ def llm_query_orchestration(prompt):
                 True,0)
             response_dict=json.loads(response.lower())
             return response_dict
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError: # If JSON could not load response:
             try:
+                # Most of the time it just forgets to enclose the final curly bracket
                 response_dict=json.loads(response.lower()+"}")
                 return response_dict
             except:
@@ -60,9 +68,11 @@ def llm_query_orchestration(prompt):
         except Exception as e:
             print(type(e))
             print("Invalid JSON generated in orchestration, trying again")
+            break
+    # exit if invalid json generated 20 times (shouldn't happen) or other error was detected (most likely connection)
     return None
     
-#added document agent query function 
+"""Method used when calling LLM from document agent"""
 def llm_query_document(query, excerpts, temp=0.0):
     """
     query: str
@@ -99,6 +109,7 @@ Return JSON exactly with:
     while attempts < 10:
         attempts += 1
         try:
+            # Generate json
             resp = llm_query(
                 [{"role": "system", "content": prompt}],
                 True,
@@ -112,9 +123,10 @@ Return JSON exactly with:
                 bullets = []
             bullets = [str(b) for b in bullets][:6]
             return {"summary_bullets": bullets, "confidence": str(conf), "confidence_reason": str(reason)}
-        except Exception:
+        except Exception: # If JSON not generated correctly, try again
             pass
 
+    # Return if generated invalid JSON 10 times
     return {"summary_bullets": [], "confidence": "low", "confidence_reason": "Document LLM summarization failed; using fallback excerpts only."}
 
 

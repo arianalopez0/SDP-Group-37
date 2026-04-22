@@ -29,23 +29,25 @@ class QueryRequest(BaseModel):
     history: Optional[List[dict]] = []
 
 
+"""Returns location string based on network AP's ip address"""
 @app.get("/guess-location")
 async def guess_location():
     try:
-        g = geocoder.ip("me")
-        if not g.latlng:
+        g = geocoder.ip("me") # "My" (current connected network's) IP address
+        if not g.latlng: # Couldn't find lat, lon based on IP
             return {"location": "Storrs, CT"}
         nom = Nominatim(user_agent="disaster-routing")
         loc = nom.reverse(g.latlng, timeout=5)
-        if not loc:
+        if not loc: # Couldn't get location name from lat,lon
             return {"location": "Storrs, CT"}
         address = loc.raw["address"]
         area_type = "city" if "city" in address else "town" if "town" in address else "county"
         road = address.get("road", "")
         area = address.get(area_type, "Storrs")
         state = address.get("state", "CT")
+        # Return simplified location name
         return {"location": f"{road}, {area}, {state}" if road else f"{area}, {state}"}
-    except Exception:
+    except Exception: # Failsafe, most likely location for someone to be using this prototype
         return {"location": "Storrs, CT"}
 
 
