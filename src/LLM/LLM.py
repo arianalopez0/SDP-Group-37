@@ -51,11 +51,7 @@ def llm_query_orchestration(prompt):
     while attempts<20:
         attempts+=1
         try:
-            # remover conversaion history from classification
-            response=llm_query([
-                    {"role": "system", "content": prompt}
-                ],
-                True,0)
+            response=llm_query([{"role": "system", "content": prompt}],True,0)
             response_dict=json.loads(response.lower())
             return response_dict
         except json.decoder.JSONDecodeError: # If JSON could not load response:

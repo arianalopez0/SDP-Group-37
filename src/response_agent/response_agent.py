@@ -29,7 +29,6 @@ Your job:
         return get_response(prompt, query)
 
 
-<<<<<<< HEAD
     has_shelter_context = "nearest_shelters" in context or "shelters" in context
     has_document_context = "document_context" in context
 
@@ -51,13 +50,8 @@ Your job:
 """
         return get_response(prompt, query)
 
-    prompt = f"""
 
-"""
-
-=======
     # Default prompt when given no context
->>>>>>> main
     prompt = f"""
 You are a calm, friendly emergency response assistant.
 
