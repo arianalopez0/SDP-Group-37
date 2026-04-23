@@ -163,7 +163,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
   useEffect(() => {
     if (!loading) { setLoadingMsgIdx(0); return; }
     const interval = setInterval(() => {
-      setLoadingMsgIdx(prev => (prev + 1) % loadingMessages.length);
+      setLoadingMsgIdx((prev) => (prev + 1) % loadingMessages.length);
     }, 4000);
     return () => clearInterval(interval);
   }, [loading]);
@@ -171,7 +171,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
   function stopQuery() {
     abortRef.current?.abort();
     setLoading(false);
-    setMessages(prev => [...prev, { role: "assistant", type: "text", content: "", error: "Query cancelled." }]);
+    setMessages((prev) => [...prev, { role: "assistant", type: "text", content: "", error: "Query cancelled." }]);
   }
 
   async function sendMessage() {
@@ -222,13 +222,16 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
         if (center && shelters.length > 0) {
           nextMessages.push({ role: "assistant", type: "map", center, shelters });
         }
-        if (onNewRawData) onNewRawData(data.raw_data);
+        onNewRawData?.(data.raw_data);
       }
 
       setMessages(nextMessages);
     } catch (e: any) {
       if (e?.name === "AbortError") return;
-      setMessages((prev) => [...prev, { role: "assistant", type: "text", content: "", error: `Request failed: ${e?.message ?? String(e)}` }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", type: "text", content: "", error: `Request failed: ${e?.message ?? String(e)}` },
+      ]);
     } finally {
       setLoading(false);
       inputRef.current?.focus();
@@ -236,7 +239,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
   }
 
   return (
@@ -272,6 +275,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
                 </div>
               );
             }
+
             const textMsg = msg as TextMessage;
             return (
               <div key={i} style={textMsg.role === "user" ? styles.userWrap : styles.assistantWrap}>
@@ -317,7 +321,13 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
           {loading ? (
             <button onClick={stopQuery} style={{ ...styles.sendBtn, background: "var(--bg-input)", fontSize: 14 }}>■</button>
           ) : (
-            <button onClick={sendMessage} disabled={!input.trim()} style={{ ...styles.sendBtn, opacity: !input.trim() ? 0.45 : 1 }}>➤</button>
+            <button
+              onClick={() => void sendMessage()}
+              disabled={!input.trim()}
+              style={{ ...styles.sendBtn, opacity: !input.trim() ? 0.45 : 1 }}
+            >
+              ➤
+            </button>
           )}
         </div>
         <div style={styles.hint}>Enter to send · Shift+Enter for new line</div>

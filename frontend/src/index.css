@@ -1,26 +1,91 @@
+/* ── Theme variables ───────────────────────────────────────────────────────── */
 :root {
+  /* Dark mode (default) */
+  --bg-page:          #0a0c14;
+  --bg-nav:           #0d0f17;
+  --bg-sidebar:       #0d0f17;
+  --bg-card:          #13161f;
+  --bg-input:         #1e2130;
+  --bg-bubble-user:   #1e3a5f;
+  --bg-bubble-asst:   #1e2130;
+  --bg-tag:           #1e2130;
+
+  --border-main:      #1e2130;
+  --border-subtle:    #2a2d3a;
+
+  --text-primary:     #e8e8e8;
+  --text-secondary:   #9aa0b8;
+  --text-muted:       #7a7f94;
+  --text-faint:       #4a4f62;
+  --text-heading:     #ffffff;
+  --text-user-bubble: #ddeeff;
+  --text-card-desc:   #7a7f94;
+  --text-nav-link:    #9aa0b8;
+  --text-nav-active:  #ffffff;
+  --text-tag:         #c8cfe0;
+  --text-notice:      #c0c8e0;
+  --text-empty-title: #c8cfe0;
+  --text-map-label:   #9aa0b8;
+
+  --accent:           #e63946;
+  --accent-open:      #2a9d8f;
+  --shadow-modal:     rgba(0,0,0,0.6);
+
+  color-scheme: dark;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0a0c14;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
+/* Light mode overrides */
+:root.light {
+  --bg-page:          #f4f5f7;
+  --bg-nav:           #ffffff;
+  --bg-sidebar:       #ffffff;
+  --bg-card:          #ffffff;
+  --bg-input:         #f0f1f5;
+  --bg-bubble-user:   #1e3a5f;
+  --bg-bubble-asst:   #f0f1f5;
+  --bg-tag:           #e8eaf0;
+
+  --border-main:      #e2e4ec;
+  --border-subtle:    #d0d3de;
+
+  --text-primary:     #1a1c26;
+  --text-secondary:   #4a4f6a;
+  --text-muted:       #6b7080;
+  --text-faint:       #9aa0b8;
+  --text-heading:     #0d0f17;
+  --text-user-bubble: #ddeeff;
+  --text-card-desc:   #6b7080;
+  --text-nav-link:    #6b7080;
+  --text-nav-active:  #0d0f17;
+  --text-tag:         #3a3f55;
+  --text-notice:      #3a3f55;
+  --text-empty-title: #1a1c26;
+  --text-map-label:   #4a4f6a;
+
+  --accent:           #e63946;
+  --accent-open:      #1a8a7a;
+  --shadow-modal:     rgba(0,0,0,0.3);
+
+  color-scheme: light;
 }
+
+*, *::before, *::after { box-sizing: border-box; }
 
 body {
   margin: 0;
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #0a0c14;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.2s, color 0.2s;
 }
 
 a {
@@ -30,10 +95,7 @@ a {
 }
 a:hover { color: #535bf2; }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
+h1 { font-size: 3.2em; line-height: 1.1; }
 
 button {
   border-radius: 8px;
@@ -45,7 +107,6 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:focus,
-button:focus-visible {
+button:focus, button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
