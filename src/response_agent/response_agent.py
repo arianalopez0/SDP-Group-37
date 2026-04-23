@@ -2,70 +2,137 @@ import json
 from ollama import chat
 from ollama import ChatResponse
 from src.orchestration.orchestration import main as run_orchestration
-
-#gets response from LLM
-def get_response(prompt, model="llama3.1:8b"):
-	response: ChatResponse = chat(
-		model=model, 
-		messages=[
-            {"role": "system", "content": "You are an emergency response summarization assistant."},
-            {"role": "user", "content": prompt}
-        ],
-		options={"temperature":0.075}
-	)
-	return response.message.content.strip()
+from src.LLM.LLM import llm_query_response as get_response
 
 def generate_response(query, context):
+    #Changed prompt to add guardrail context handling and to better instruct the model on how to use the context information. The prompt is designed to be flexible based on what information is available in the context.
+    if "guardrail_context" in context and context["guardrail_context"].get("blocked"):
+        allowed_topics = context["guardrail_context"].get("allowed_topics", [])
+        topics_text = ", ".join(allowed_topics)
+
+        prompt = f"""
+You are a calm, polite emergency preparedness assistant.
+
+The user's message is outside the supported scope of this app.
+
+User question:
+"{query}"
+
+Your job:
+- Politely explain that this chatbot is designed only for disaster preparedness, emergency shelters, routing to shelters, evacuation, and official emergency guidance
+- Do not answer the off-topic question itself
+- Briefly redirect the user to supported topics
+- Mention these supported topics naturally: {topics_text}
+- Keep the response short, polite, and helpful
+- Output plain text only
+"""
+        return get_response(prompt, query)
+
+
+    # Default prompt when given no context
     prompt = f"""
-    You are a calm, friendly emergency response assistant.
+You are a calm, friendly emergency response assistant.
 
-    Start your response with a short, warm introduction (2–3 sentences) that:
-    - Acknowledges the user's request
-    - Explains that you checked nearby shelters based on their location
-    - Reassures them that the information is meant to help them make a decision
+Start your response with a short, warm introduction (2–3 sentences) that:
+- Acknowledges the user's request
+- Reassures them that the information is meant to help them make a decision
 
-    Example opening tone (do not copy exactly):
-    "I looked up shelters near your location to help you find the safest options.
-     Here are the closest places you can access right now."
+User question:
+"{query}"
 
-    Then present the shelter list.
-
-    User question:
-    "{query}"
-    
-    You will be given this JSON structure:
-    {{
-    "query": "...",
-    "user_location": {{ ... }},
-    "shelters": [
-        {{
-        "name": "...",
-        "address": "...",
-        "city": "...",
-        "state": "...",
-        "zip": "...",
-        "status": "...",
-        "handicap_accessible": "...",
-        "location": {{ "lat": ..., "lon": ... }},
-        "straightline_distance_miles": ...,
-        "route": {{ ... }}   # may be null
-            }}
-          ]
-        }}
-
-
-    Your job:
-    - Summarize EACH shelter listed
-    - If route information is present, include brief directions or travel details for that shelter
-    - Output one shelter per line in plain text
-    - DO NOT output JSON and DO NOT add or invent any information
-    
-    Full Context JSON:
-    {json.dumps(context, indent=2)}
+Your job:
+- Respond to the user in a way that best answers their questions
+- Be polite and helpful, the user may be in a stressful or life-threatening situation
+- Do not assume the user is in immediate danger, only use the information they've given you.
+- DO NOT output JSON and DO NOT add or invent any information
     """
 
-    # Send prompt to LLM using the same get_response() pattern
 
-    summary_text = get_response(prompt)
+
+    # If context given, start a new prompt and add sections to match actual format depending on what info is in context
+    if len(context)>0:
+        prompt = f"""
+You are a calm, friendly emergency response assistant.
+
+If the conversation has just started, begin your response with a short, warm introduction (2–3 sentences) that:
+- Acknowledges the user's request
+- Reassures them that the information is meant to help them make a decision
+Otherwise, an introduction is not always necessary.
+
+Output plain text only. Do NOT output JSON and do NOT invent information.
+
+User question:
+"{query}"
+
+You will be given this JSON structure:
+{{
+"user_location": {{ ... }},"""
+    if "document_context" in context: # Format for doc agent context
+        prompt+="""
+"document_context": {{ ... }},
+"""
+    if "nearest_shelters" in context or "shelters" in context: # Format for data/routing agent context
+        prompt+="""
+"nearest_shelters": [
+    {
+    "name": "...",
+    "address": "...",
+    "city": "...",
+    "state": "...",
+    "zip": "...",
+    "status": "...",
+    "handicap_accessible": "...",
+    "location": { "lat": ..., "lon": ... },
+    "straightline_distance_miles": ...,
+    "route": { ... }   # may be null
+        }
+    ]
+"""
+    prompt+="""} # More default prompting
+
+The JSON context may contain:
+    - shelter information/directions under "shelters"
+    - preparedness document information under "document_context"
+
+The user cannot see this context. It exists only to help you inform them.
+"""
+
+    if "nearest_shelters" in context or "shelters" in context: # Instructions for data/routing agent context
+        prompt+="""
+If shelters are present:
+    - Start with a short, warm introduction (2-3 sentences)
+    - Then summarize EACH shelter listed, with clear bulleted formatting.
+    - If route information exists, include step-by-step directions. Otherwise, do NOT provide directions.
+    - If a shelter's "flood_warnings" field is present and non-null, warn the user clearly.
+    - "High" risk zones (A/V zones): strongly caution that this route passes through an active FEMA flood hazard area
+    - "Moderate" risk: note that part of the route is in a moderate flood risk area
+    - "Low" risk: mention briefly but don't alarm
+    - If multiple shelters are available with lower risk routes, suggest those first.
+"""
+    if "document_context" in context: # Instructions for document agent context
+        prompt+="""
+If document_context is present:
+    - Add a section titled: "Preparedness Guidance (CT Guide)"
+    - Use ONLY document_context.summary_bullets
+    - If summary_bullets is empty, use document_context.answer_snippets
+    - Do NOT add advice not supported by excerpts
+    - Add a "Sources" section listing doc_title and source URL
+"""
+        if "nearest_shelters" not in context and "shelters" not in context: # Prompt specifically for when doc agent but no data agent
+            prompt+="""
+If ONLY document_context exists (no shelters):
+    - Write a short intro acknowledging the question
+    - Then show the preparedness guidance section and sources
+"""
+    prompt+=f"""
+Full Context JSON:
+{json.dumps(context, indent=2)}
+"""
+
+    # Final prompt will match context, with instructions for each section when given.
+    # This way, the LLM is not confused by irrelevant instructions 
+
+    print(prompt)
+    summary_text = get_response(prompt, query)
 
     return summary_text

@@ -31,14 +31,16 @@ class DataAgent:
         self.df["shelter_na"] = self.df["shelter_na"].astype(str).apply(self.clean_text)
 
         # --- Load FEMA Flood Hazard Layer ---
-        hazard_path = os.path.join(base_path, "hazards", "floods", "CT_Flood_Zones.shp")
+        # flood shapefile lives at top-level: data/hazards/floods/CT_Flood_Zones.shp
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        hazard_path = os.path.join(repo_root, "data", "hazards", "floods", "CT_Flood_Zones.shp")
         if os.path.exists(hazard_path):
             self.hazards = {
                 "fema_flood": gpd.read_file(hazard_path).to_crs("EPSG:4326")
             }
             print(f"Loaded {len(self.hazards['fema_flood'])} FEMA flood polygons for Connecticut.")
         else:
-            print("FEMA flood hazard shapefile not found.")
+            print(f"FEMA flood hazard shapefile not found at {hazard_path}")
 
 
 
@@ -131,6 +133,10 @@ class DataAgent:
         if z == "X":
             return "Low"
         return "Unknown"
+
+    def get_hazard_layer(self, name="fema_flood"):
+        """Return a flood hazard GeoDataFrame by name, or None."""
+        return self.hazards.get(name) if hasattr(self, "hazards") else None
 
 
 

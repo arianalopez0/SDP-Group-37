@@ -56,30 +56,35 @@ def handle_user_query(query: str, lat=None, lon=None, state="CT"):
     Returns:
         Dict with query, natural language response, and raw data
     """
-    try:
-        # TODO: Pass lat/lon once orchestration.main() accepts them
-        # For now, orchestration uses hardcoded coordinates (41.2940, -72.3768)
-        context = orchestration_main(query, lat, lon)
-        
-        if not context:
-            return {"error": "No context returned from orchestration", "query": query}
-        
-        # Generate natural language response
-        llm_context = copy.deepcopy(context)
-
-        # Remove path_coordinates ONLY from llm_context
-        if "shelters" in llm_context:
-            for shelter in llm_context["shelters"]:
-                if shelter.get("route") and "path_coordinates" in shelter["route"]:
-                    del shelter["route"]["path_coordinates"]
-        response_text = generate_response(query, llm_context)
-        
-        # Return both for flexibility
+    #try:
+    context = orchestration_main(query, lat, lon)
+    
+    if not context:
+        response_text = generate_response(query, {})
+    
         return {
             "query": query,
-            "response": response_text,  # Human-readable
-            "raw_data": context  # Still available if needed
+            "response": response_text,
+            "raw_data": {}
         }
+        #return {"error": "No context returned from orchestration", "query": query}
+    
+    # Generate natural language response
+    llm_context = copy.deepcopy(context)
+
+    # Remove path_coordinates ONLY from llm_context
+    if "shelters" in llm_context:
+        for shelter in llm_context["shelters"]:
+            if shelter.get("route") and "path_coordinates" in shelter["route"]:
+                del shelter["route"]["path_coordinates"]
+    response_text = generate_response(query, llm_context)
+    
+    # Return both for flexibility
+    return {
+        "query": query,
+        "response": response_text,  # Human-readable
+        "raw_data": context  # Still available if needed
+    }
         
-    except Exception as e:
-        return {"error": str(e), "query": query}
+    #except Exception as e:
+    #    return {"error": str(e), "query": query}

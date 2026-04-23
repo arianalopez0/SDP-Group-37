@@ -1,5 +1,7 @@
 import requests
 import polyline
+from shapely.geometry import LineString
+import geopandas as gpd
 from math import atan2, degrees
 
 OSRM_URL = "http://router.project-osrm.org"
@@ -95,6 +97,67 @@ class RoutingAgent:
         return directions
 
     @staticmethod
+    def classify_flood_risk(zone: str, subtype: str = "", sfha_tf=None) -> str:
+        """
+        Map FEMA fields to a simple risk label.
+        - SFHA (A/V zones) => High
+        - Zone X shaded (0.2% annual chance) => Moderate
+        - Zone X unshaded => Low
+        """
+        z = (zone or "").upper().strip()
+        st = (subtype or "").upper()
+        sfha_flag = str(sfha_tf).upper() in {"T", "Y", "1", "TRUE", "YES"}
+
+        if sfha_flag or z.startswith(("A", "V")):
+            return "High"
+        if z == "X" and ("0.2" in st or "0.2 PCT" in st or "SHADED" in st):
+            return "Moderate"
+        if z == "X":
+            return "Low"
+        return "Unknown"
+
+    @staticmethod
+    def check_route_flood_risk(path_coords, flood_gdf):
+        """
+        Given a decoded polyline (list of [lat, lon]) and a flood GeoDataFrame,
+        return a list of flood zone intersections along the route.
+        """
+
+        if flood_gdf is None or len(path_coords) < 2:
+            return []
+
+        # path_coords is [[lat, lon], ...] — shapely wants (lon, lat)
+        line = LineString([(lon, lat) for lat, lon in path_coords])
+        route_gdf = gpd.GeoDataFrame(geometry=[line], crs="EPSG:4326")
+
+        joined = gpd.sjoin(route_gdf, flood_gdf, predicate="intersects", how="inner")
+        if joined.empty:
+            return []
+
+        warnings = []
+        for _, row in joined.iterrows():
+            zone = row.get("FLD_ZONE", "Unknown")
+            subtype = row.get("ZONE_SUBTY", "")
+            sfha_tf = row.get("SFHA_TF", None)
+            risk = RoutingAgent.classify_flood_risk(zone, subtype, sfha_tf)
+            warnings.append({
+                "zone": zone,
+                "risk": risk,
+                "description": subtype or None
+            })
+
+        # Dedupe by zone+risk
+        seen = set()
+        unique = []
+        for w in warnings:
+            key = (w["zone"], w["risk"])
+            if key not in seen:
+                seen.add(key)
+                unique.append(w)
+
+        return unique
+
+    @staticmethod
     def get_routes(user_lat, user_lon, shelters, max_results=5):
         results = []
 
@@ -131,6 +194,7 @@ class RoutingAgent:
                     "steps": directions,
                     "narrative": "\n".join([f"{i+1}. {d}" for i, d in enumerate(directions)])
                 },
+                # changed to len to we dont get a spam of coordinates in the output
                 "path_coordinates": osrm["path_coords"]
             })
 

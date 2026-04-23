@@ -1,3 +1,4 @@
+"""Orchestration agent's functionality and testbed method"""
 import sys
 import os
 import json
@@ -5,94 +6,143 @@ from ollama import chat
 from ollama import ChatResponse
 from ..data_agent.data_agent import DataAgent
 from ..routing_agent import RoutingAgent
+from ..document_agent.document_agent import DocumentAgent
+from dataclasses import asdict
+from ..LLM.LLM import llm_query_orchestration as get_response
 
-
-#gets response from LLM
-def get_response(prompt, model="llama3.1:8b"):
-    response: ChatResponse = chat(
-        model=model, 
-        messages=[{'role': 'system', 'content': prompt}],
-        format="json",
-        options={"temperature":0.075}
-    )
-    return response.message.content
-
-#returns required data for answering response
+"""Returns which agents are required to answer a particular query"""
 def interpret_query(query):
+    # The template that the LLM should return to classify agent necessity.
+    # "Description" is the main way the LLM decides necessity
     json_template={
-        "Question":query,
+        "Message":query,
         "Response":{
+            "allow_emergency_response":{
+                "Description":"True if the message is related to disasters, emergency preparedness, shelters, evacuation, safety guidance, or emergency routing. False if the message is unrelated, casual, random, or outside the app's purpose.",
+                "Value":"NULL"
+            },
             "need_shelter_data":{
-                "Description":"To answer this question, we need data about disaster shelter locations or services.",
+                "Description":"The message asks for info about disaster shelter locations or services.",
                 "Value":"NULL"
             },
             "need_routing_data":{
-                "Description":"The query specifies a location and asks for directions or routing to it.",
+                "Description":"The message asks for directions, routing, or how to get to somewhere.",
                 "Value":"NULL"
-            }
+            },
+            "need_document_data":{
+                "Description":"To answer this question, we need information from preparedness documents (emergency kit, shelter-in-place, evacuation, pets, supplies, etc.).",
+                "Value":"NULL"
+            }            
         }
     }
     
-    #If the question is unrelated to natural disasters, shelters, or emergencies, all "NULL" values should be changed to "False".
     
+    # LLM Prompt for deciding agent necessity. Includes above template
     prompt=f"""
-    <role>
-    This is part of an app created to help users get information about natural disasters and disaster shelters.
-    Your job is to fill in a JSON template meticulously, matching the format EXACTLY, based on a question's required information.
-    The data we need is "need_shelter_data" and "need_routing_data".
-    To complete these, replace any instances of "NULL" with "True" or "False".
-    Do not change any other values besides "NULL" in the response.
-    </role>
-    <json_template>
-    {json_template}
-    </json_template>
-    """
-    
-    #get response based on prompt
-    response=json.loads(get_response(prompt).lower())
+<role>
+This is part of a chatbot app created to help users get information about natural disasters, emergency preparedness, evacuation, shelters, and disaster routing.
+Your job is to fill in a JSON template meticulously, matching the format EXACTLY, based on a message's required information.
+The data we need is "need_shelter_data" and "need_routing_data".
+To complete these, replace any instances of "NULL" with "True" or "False".
+Do not change any other values besides "NULL" in the response.
+Do not write anything outside of the JSON response, and make sure all opening brackets are closed.
+If the question is unrelated to natural disasters, shelters, directions, or emergencies, all "NULL" values should be changed to "False".
+</role>
+
+<instructions>
+Set "allow_emergency_response" to True only if the message is relevant to:
+- natural disasters
+- emergency preparedness
+- evacuation
+- shelter information
+- emergency routing/directions
+- emergency safety guidance
+
+Set "allow_emergency_response" to False if the message is:
+- unrelated
+- casual conversation
+- random small talk
+- jokes or nonsense
+- questions outside the app's emergency/disaster purpose
+
+If "allow_emergency_response" is False, then all other fields must also be False.
+
+Set "need_shelter_data" to True if the user is asking about disaster shelters or shelter services.
+Set "need_routing_data" to True if the user is asking for directions/routes/navigation.
+Set "need_document_data" to True if the user is asking for preparedness or emergency guidance from official documents.
+</instructions>
+
+<json_template>
+{json.dumps(json_template)}
+</json_template>
+"""
+        
+    #get response from LLM
+    response=get_response(prompt)
+    allow_emergency_response=True
     need_shelter_data=False
     need_routing_data=False
+    need_document_data=False
     error=""
     
     #parse data
+    #added document agent to all of this
     if "response" in response:
         response=response["response"]
     try:
+        allow_emergency_response=response["allow_emergency_response"]
         need_shelter_data=response["need_shelter_data"]
         need_routing_data=response["need_routing_data"]
+        need_document_data=response["need_document_data"]
     except:
-        return [False, False], response, "Missing data key(s)."
+        #LLM did not return proper JSON template
+        return [False, False, False, False], response, "Missing data key(s)."
     try:
+        allow_emergency_response=allow_emergency_response["value"]
         need_shelter_data=need_shelter_data["value"]
         need_routing_data=need_routing_data["value"]
+        need_document_data=need_document_data["value"]
+        if type(allow_emergency_response) is str:
+            allow_emergency_response=allow_emergency_response=="true"
         if type(need_shelter_data) is str:
             need_shelter_data=need_shelter_data=="true"
         if type(need_routing_data) is str:
             need_routing_data=need_routing_data=="true"
+        if type(need_document_data) is str:
+            need_document_data=need_document_data=="true"
     except:
         error="No value key"
     
-    return [need_shelter_data, need_routing_data], response, error
+    # Ensure that need_shelter_data is true if need_routing_data is also true.
+    return [allow_emergency_response, need_shelter_data or need_routing_data, need_routing_data, need_document_data], response, error
 
+"""Testbed for different queries and how the decision-making responds to different prompts/agent necessities"""
 def test_queries():
+    # Modify this list to add/change tests
     tests=[
+        #Asking for document data
+        {"query":"Should I make an emergency kit?",
+            "desired":[[True, False, False, True]],
+            "acceptable":[],
+            "trials":50
+        },
         #Asking for only shelter data
         {"query":"Where are the nearest disaster shelters?",
-            "desired":[[True,False]],
-            "acceptable":[[True,True]],
-            "trials":10
+            "desired":[[True,True,False,False]],
+            "acceptable":[[True,True,True,False]],
+            "trials":50
         },
         #Asking for routing data
         {"query":"How do I get to the Storrs disaster shelter?",
-            "desired":[[True, True]],
+            "desired":[[True,True, True, False]],
             "acceptable":[],
-            "trials":10
+            "trials":50
         },
         #Random unrelated question
         {"query":"I really really like pigs. Do you like pigs?",
-            "desired":[[False,False]],
+            "desired":[[False,False,False,False]],
             "acceptable":[],
-            "trials":5
+            "trials":25
         },
     ]
     
@@ -108,14 +158,18 @@ def test_queries():
         print(f"Query: {query}")
         print(f"{trials} trials")
         print("Desired output:")
-        if desired_outputs[0][0]:
+        if desired_outputs[0][1]:
             print("Need data agent")
         else:
             print("Don't need data agent")
-        if desired_outputs[0][1]:
+        if desired_outputs[0][2]:
             print("Need routing agent")
         else:
             print("Don't need routing agent")
+        if desired_outputs[0][3]:
+            print("Need document agent")
+        else:
+            print("Don't need document agent")
         print("")
         
         for i in range(trials):
@@ -142,6 +196,7 @@ def test_queries():
         print("Acceptable-inclusive accuracy:",str(acceptable/trials*100)+"%")
         print("True accuracy:",str(desired/trials*100)+"%\n")
         
+"""Main functionality for Orchestration Agent"""
 def main(query, lat, lon):
     print("Query:",query)
     print(lat,lon)
@@ -150,15 +205,49 @@ def main(query, lat, lon):
         print("Error in interpret_query:",error)
         print("Response:",response)
         return
-        
+    
+    allow_emergency_response = output[0]
+    need_shelter_data = output[1]
+    need_routing_data = output[2]
+    need_document_data = output[3]
+
+    # For unrelated queries
+    if not allow_emergency_response:
+        return {
+            "query": query,
+            "guardrail_context": {
+                "blocked": True,
+                "reason": "off_topic",
+                "allowed_topics": [
+                    "disaster shelters",
+                    "evacuation",
+                    "emergency preparedness",
+                    "routes to shelters",
+                    "emergency supply kits",
+                    "shelter-in-place guidance"
+                ]
+            }
+        }
+
+    # Document agent required
+    doc_context = None
+    if need_document_data:
+        idx_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "document_agent", ".doc_index"))
+        doc_agent = DocumentAgent(index_dir=idx_dir)
+        doc_result = doc_agent.answer(query)
+        doc_context = asdict(doc_result)
+
+    # Shelter data (Data agent) required
     shelter_data = None
-    if output[0]:
+    if need_shelter_data:
         agent = DataAgent(base_path="src/data_agent/data")
+        flood_gdf = agent.get_hazard_layer("fema_flood")
         shelter_data = agent.handle_query(lat=lat, lon=lon, state="CT")
     else:
         print("Data agent not necessary")
 
-    if output[1] and shelter_data:
+    # Routing agent required
+    if need_routing_data and shelter_data:
         print("Starting routing agent...")
         shelters_for_routing = {}
         for shelter in shelter_data["nearest_shelters"]:
@@ -176,12 +265,21 @@ def main(query, lat, lon):
             "shelters": []
         }
 
+        if doc_context is not None:
+            combined_result["document_context"] = doc_context
 
         routing_lookup = {route["shelter_name"]: route for route in routing_result["routes"]}
         
         # Merge each shelter's data with its routing info
         for shelter in shelter_data["nearest_shelters"]:
             shelter_name = shelter["name"]
+            route_info = routing_lookup.get(shelter_name, None)
+
+            flood_warnings = []
+            if route_info and flood_gdf is not None:
+                path = route_info.get("path_coordinates", [])
+                flood_warnings = RoutingAgent.check_route_flood_risk(path, flood_gdf)
+
             combined_shelter = {
                 # data agent
                 "name": shelter["name"],
@@ -197,18 +295,24 @@ def main(query, lat, lon):
                 },
                 "straightline_distance_miles": shelter["straightline_distance_miles"],
                 # routing agent
-                "route": routing_lookup.get(shelter_name, None)
+                "route": routing_lookup.get(shelter_name, None),
+                "flood_warnings": flood_warnings or None,
             }
             combined_result["shelters"].append(combined_shelter)
 
         print("\n" + "="*50)
         print("COMBINED RESULT")
         print("="*50)
-        print(json.dumps(combined_result, indent=2))
+        # print(json.dumps(combined_result, indent=2))
         return combined_result
-    elif output[1]:
+    elif need_routing_data:
         print(f"Routing not triggered. need_routing, but no shelter data.")
         return
     
+    if doc_context is not None and not shelter_data:
+        result = {"query": query, "document_context": doc_context}
+        print(json.dumps(result, indent=2))
+        return result
+
     print(json.dumps(shelter_data, indent=2))
     return shelter_data
