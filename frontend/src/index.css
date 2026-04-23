@@ -48,19 +48,21 @@
   --bg-sidebar:       #ffffff;
   --bg-card:          #ffffff;
   --bg-input:         #f0f1f5;
-  --bg-bubble-user:   #1e3a5f;
-  --bg-bubble-asst:   #f0f1f5;
+  --bg-bubble-user:   rgba(230, 57, 70, 0.1);
+  --bg-bubble-asst:   rgba(230, 57, 70, 0.05);
   --bg-tag:           #e8eaf0;
 
   --border-main:      #e2e4ec;
   --border-subtle:    #d0d3de;
+  --border-bubble-user: rgba(230, 57, 70, 0.25);
+  --border-bubble-asst: rgba(230, 57, 70, 0.15);
 
   --text-primary:     #1a1c26;
   --text-secondary:   #4a4f6a;
   --text-muted:       #6b7080;
   --text-faint:       #9aa0b8;
   --text-heading:     #0d0f17;
-  --text-user-bubble: #ddeeff;
+  --text-user-bubble: #1a1c26;
   --text-card-desc:   #6b7080;
   --text-nav-link:    #6b7080;
   --text-nav-active:  #0d0f17;
