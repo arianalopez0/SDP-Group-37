@@ -71,7 +71,6 @@ function getRoute(shelter: Shelter, userCoord?: Coord): Coord[] | null {
   return userCoord ? [userCoord, ...pts] : pts;
 }
 
-// Small inline map rendered as a chat bubble
 function InlineMap({ center, shelters }: { center: Coord; shelters: Shelter[] }) {
   return (
     <div style={styles.mapBubble}>
@@ -96,7 +95,6 @@ function InlineMap({ center, shelters }: { center: Coord; shelters: Shelter[] })
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
           />
-          {/* User location dot */}
           <Marker
             position={center}
             icon={L.divIcon({
@@ -176,7 +174,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
   useEffect(() => {
     if (!loading) { setLoadingMsgIdx(0); return; }
     const interval = setInterval(() => {
-      setLoadingMsgIdx(prev => (prev + 1) % loadingMessages.length);
+      setLoadingMsgIdx((prev) => (prev + 1) % loadingMessages.length);
     }, 4000);
     return () => clearInterval(interval);
   }, [loading]);
@@ -184,7 +182,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
   function stopQuery() {
     abortRef.current?.abort();
     setLoading(false);
-    setMessages(prev => [...prev, { role: "assistant", type: "text", content: "", error: "Query cancelled." }]);
+    setMessages((prev) => [...prev, { role: "assistant", type: "text", content: "", error: "Query cancelled." }]);
   }
 
   async function sendMessage() {
@@ -224,26 +222,27 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
         return;
       }
 
-      // Add text response
       const nextMessages: Message[] = [
         ...newMessages,
         { role: "assistant", type: "text", content: data.response ?? "" },
       ];
 
-      // If there's shelter data, append an inline map message
       if (data.raw_data) {
         const center = getCenter(data.raw_data);
         const shelters = getShelters(data.raw_data);
         if (center && shelters.length > 0) {
           nextMessages.push({ role: "assistant", type: "map", center, shelters });
         }
-        if (onNewRawData) onNewRawData(data.raw_data);
+        onNewRawData?.(data.raw_data);
       }
 
       setMessages(nextMessages);
     } catch (e: any) {
       if (e?.name === "AbortError") return;
-      setMessages((prev) => [...prev, { role: "assistant", type: "text", content: "", error: `Request failed: ${e?.message ?? String(e)}` }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", type: "text", content: "", error: `Request failed: ${e?.message ?? String(e)}` },
+      ]);
     } finally {
       setLoading(false);
       inputRef.current?.focus();
@@ -251,7 +250,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
   }
 
   return (
@@ -279,7 +278,6 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
 
         <div style={styles.messageList}>
           {messages.map((msg, i) => {
-            // Inline map bubble
             if (msg.type === "map") {
               return (
                 <div key={i} style={{ ...styles.assistantWrap }}>
@@ -289,7 +287,6 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
               );
             }
 
-            // Regular text bubble
             const textMsg = msg as TextMessage;
             return (
               <div key={i} style={textMsg.role === "user" ? styles.userWrap : styles.assistantWrap}>
@@ -336,7 +333,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
             <button onClick={stopQuery} style={{ ...styles.sendBtn, background: "#2a2d3a", fontSize: 14 }}>■</button>
           ) : (
             <button
-              onClick={sendMessage}
+              onClick={() => void sendMessage()}
               disabled={!input.trim()}
               style={{ ...styles.sendBtn, opacity: !input.trim() ? 0.45 : 1 }}
             >
@@ -368,7 +365,6 @@ const styles: Record<string, React.CSSProperties> = {
   textarea: { flex: 1, background: "#1e2130", border: "1px solid #2a2d3a", borderRadius: 8, padding: "6px 10px", color: "#e8e8e8", fontSize: 13, resize: "none", outline: "none", lineHeight: 1.5, fontFamily: "inherit" },
   sendBtn: { background: "#e63946", color: "#fff", border: "none", borderRadius: 8, width: 36, fontSize: 16, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
   hint: { padding: "2px 12px 8px", fontSize: 10, color: "#4a4f62", background: "#0d0f17" },
-  // Map bubble styles
   mapBubble: { background: "#13161f", border: "1px solid #2a2d3a", borderRadius: "14px 14px 14px 4px", padding: "10px", maxWidth: "82%", width: "82%" },
   mapLabel: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#9aa0b8", fontWeight: 600, marginBottom: 8 },
   mapContainer: { width: "100%", height: 240, borderRadius: 10, overflow: "hidden" },

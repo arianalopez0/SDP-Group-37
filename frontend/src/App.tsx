@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip } from "react-leaflet";
 import L from "leaflet";
-import ChatWidget from "./ChatWidget";
+import ChatWidget from "./Chatwidget";
 
 type Page = "home" | "map" | "about";
 
@@ -11,6 +11,7 @@ interface Shelter {
   straightline_distance_miles?: number | null;
   handicap_accessible?: string | null;
   route?: any;
+  flood_warnings?: { zone: string; risk: string; description?: string | null }[] | null;
 }
 
 function getShelters(data: any): Shelter[] {
@@ -28,6 +29,7 @@ function getShelters(data: any): Shelter[] {
         straightline_distance_miles: s.straightline_distance_miles ?? null,
         handicap_accessible: s.handicap_accessible ?? null,
         route: s.route ?? null,
+        flood_warnings: s.flood_warnings ?? null,
       }));
   }
   return [];
@@ -271,6 +273,11 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData 
                         {s.handicap_accessible === "Yes" ? "✓ Wheelchair accessible" : "✗ Not accessible"}
                       </div>
                     )}
+                    {s.flood_warnings && s.flood_warnings.length > 0 && (
+                    <div style={{ ...ms.shelterMeta, color: s.flood_warnings[0].risk === "High" ? "#e63946" : s.flood_warnings[0].risk === "Moderate" ? "#f4a261" : "#7a7f94" }}>
+                      ⚠ Flood zone: {s.flood_warnings[0].risk} ({s.flood_warnings[0].zone})
+                    </div>
+                  )}
                   </div>
                 </div>
               ))}
