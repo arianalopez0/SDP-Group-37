@@ -42,33 +42,54 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
   isDark: boolean;
   toggleTheme: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  function navigate(p: Page) {
+    setPage(p);
+    setMenuOpen(false);
+  }
+
   return (
-    <nav style={ns.nav}>
-      <div style={ns.brand}>
-        <span style={{ color: "var(--accent)", fontSize: 20 }}>⚠</span>
-        <span style={ns.brandName}>DisasterRoute CT</span>
-      </div>
-      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+    <>
+      <nav style={ns.nav}>
+        <div style={ns.brand}>
+          <span style={{ color: "var(--accent)", fontSize: 20 }}>⚠</span>
+          <span style={ns.brandName}>DisasterRoute CT</span>
+        </div>
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <div className="desktop-nav-links" style={{ display: "flex", gap: 4, alignItems: "center" }}>
+            {(["home", "map", "resources", "about"] as Page[]).map((p) => (
+              <button key={p} onClick={() => navigate(p)}
+                style={{ ...ns.link, ...(page === p ? ns.linkActive : {}) }}>
+                {p === "map" ? "Assistance" : p === "resources" ? "Resources" : p.charAt(0).toUpperCase() + p.slice(1)}
+              </button>
+            ))}
+          </div>
+          <button onClick={toggleTheme} style={ns.themeBtn} title="Toggle theme">
+            {isDark ? "☀" : "🌙"}
+          </button>
+          <button
+            className="hamburger-btn"
+            onClick={() => setMenuOpen(o => !o)}
+            style={{ ...ns.themeBtn, display: "none", fontSize: 18, padding: "4px 8px" }}
+          >
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </div>
+      </nav>
+      <div className={`mobile-nav-menu${menuOpen ? " open" : ""}`}>
         {(["home", "map", "resources", "about"] as Page[]).map((p) => (
-          <button key={p} onClick={() => setPage(p)}
-            style={{ ...ns.link, ...(page === p ? ns.linkActive : {}) }}>
-            {p === "map"
-              ? "Assistance"
-              : p === "resources"
-                ? "Resources"
-                : p.charAt(0).toUpperCase() + p.slice(1)
-            }
+          <button key={p} onClick={() => navigate(p)}
+            style={{ ...ns.link, ...(page === p ? ns.linkActive : {}), width: "100%", textAlign: "left" as const }}>
+            {p === "map" ? "Assistance" : p === "resources" ? "Resources" : p.charAt(0).toUpperCase() + p.slice(1)}
           </button>
         ))}
-        <button onClick={toggleTheme} style={ns.themeBtn} title="Toggle theme">
-          {isDark ? "☀" : "🌙"}
-        </button>
       </div>
-    </nav>
+    </>
   );
 }
 const ns: Record<string, React.CSSProperties> = {
-  nav: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px", height: 56, background: "var(--bg-nav)", borderBottom: "1px solid var(--border-main)", position: "sticky", top: 0, zIndex: 1000 },
+  nav: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: 56, background: "var(--bg-nav)", borderBottom: "1px solid var(--border-main)", position: "sticky", top: 0, zIndex: 1000 },
   brand: { display: "flex", alignItems: "center", gap: 8 },
   brandName: { color: "var(--text-heading)", fontWeight: 700, fontSize: 16, letterSpacing: "0.02em" },
   link: { background: "none", border: "none", color: "var(--text-nav-link)", fontSize: 14, cursor: "pointer", padding: "6px 14px", borderRadius: 6, fontWeight: 500 },
@@ -80,14 +101,14 @@ const ns: Record<string, React.CSSProperties> = {
 function HomePage({ setPage }: { setPage: (p: Page) => void }) {
   return (
     <div style={hs.page}>
-      <div style={hs.hero}>
+      <div style={hs.hero} className="home-hero">
         <div style={hs.alertBadge}>🔴 ACTIVE EMERGENCY TOOL</div>
         <h1 style={hs.h1}>Find Safety.<br />Find Shelter.<br />Find Your Route.</h1>
         <p style={hs.sub}>DisasterRoute CT uses real-time data and AI to guide Connecticut residents to the nearest open shelters during emergencies.</p>
         <button onClick={() => setPage("map")} style={hs.cta}>Get Assistance →</button>
       </div>
-      <div style={hs.cards}>
-      {[
+      <div className="home-cards" style={hs.cards}>
+        {[
           {
             icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="#4a9eed"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>,
             title: "Interactive Shelter Map",
@@ -119,7 +140,7 @@ function HomePage({ setPage }: { setPage: (p: Page) => void }) {
             <div style={hs.cardTitle}>{c.title}</div>
             <div style={hs.cardDesc}>{c.desc}</div>
           </div>
-      ))}
+        ))}
       </div>
       <div style={hs.notice}>
         <strong>⚠ This tool is for demonstration and research purposes.</strong> Always follow official emergency broadcasts and local authority guidance during a real disaster.
@@ -128,8 +149,8 @@ function HomePage({ setPage }: { setPage: (p: Page) => void }) {
   );
 }
 const hs: Record<string, React.CSSProperties> = {
-  page: { maxWidth: 1100, margin: "0 auto", padding: "48px 24px 80px" },
-  hero: { textAlign: "center", padding: "60px 0 48px" },
+  page: { maxWidth: 1100, margin: "0 auto", padding: "48px 20px 80px" },
+  hero: { textAlign: "center", padding: "48px 0 40px" },
   alertBadge: { display: "inline-block", background: "rgba(230,57,70,0.15)", color: "var(--accent)", border: "1px solid rgba(230,57,70,0.3)", borderRadius: 999, padding: "4px 14px", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 24 },
   h1: { fontSize: 44, fontWeight: 800, lineHeight: 1.2, color: "var(--text-heading)", margin: "0 0 20px" },
   sub: { fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: 540, margin: "0 auto 32px" },
@@ -166,8 +187,8 @@ function FullMapModal({ center, shelters, onClose }: { center: Coord; shelters: 
   }, [onClose]);
 
   return (
-    <div style={modal.overlay} onClick={onClose}>
-      <div style={modal.sheet} onClick={(e) => e.stopPropagation()}>
+    <div className="full-map-modal-overlay" style={modal.overlay} onClick={onClose}>
+      <div className="full-map-modal-sheet" style={modal.sheet} onClick={(e) => e.stopPropagation()}>
         <div style={modal.header}>
           <span style={{ color: "var(--accent)", fontSize: 16 }}>🗺</span>
           <span style={modal.title}>Shelter Map</span>
@@ -252,14 +273,30 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData 
   const shelters = useMemo(() => getShelters(sharedRawData), [sharedRawData]);
   const center = useMemo(() => getCenter(sharedRawData), [sharedRawData]);
   const [showModal, setShowModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div style={ms.page}>
+    <div className="map-page" style={ms.page}>
       {showModal && center && (
         <FullMapModal center={center} shelters={shelters} onClose={() => setShowModal(false)} />
       )}
-      <div style={ms.sidebar}>
-        <h2 style={ms.sideTitle}>Nearby Shelters</h2>
+
+      {/* Mobile sidebar overlay */}
+      <div
+        className={`sidebar-overlay${sidebarOpen ? " open" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      {/* Sidebar */}
+      <div className={`sidebar-drawer${sidebarOpen ? " open" : ""}`} style={ms.sidebar}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+          <h2 style={ms.sideTitle}>Nearby Shelters</h2>
+          <button
+            className="sidebar-close-btn"
+            onClick={() => setSidebarOpen(false)}
+            style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 18, cursor: "pointer", padding: "4px 6px", display: "none" }}
+          >✕</button>
+        </div>
         <label style={ms.label}>Your Location</label>
         <input
           value={startLocation}
@@ -301,23 +338,48 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData 
                       </div>
                     )}
                     {s.flood_warnings && s.flood_warnings.length > 0 && (
-                    <div style={{ ...ms.shelterMeta, color: s.flood_warnings[0].risk === "High" ? "#e63946" : s.flood_warnings[0].risk === "Moderate" ? "#f4a261" : "#7a7f94" }}>
-                      ⚠ Flood zone: {s.flood_warnings[0].risk} ({s.flood_warnings[0].zone})
-                    </div>
-                  )}
+                      <div style={{ ...ms.shelterMeta, color: s.flood_warnings[0].risk === "High" ? "#e63946" : s.flood_warnings[0].risk === "Moderate" ? "#f4a261" : "#7a7f94" }}>
+                        ⚠ Flood zone: {s.flood_warnings[0].risk} ({s.flood_warnings[0].zone})
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
             {center && (
-              <button onClick={() => setShowModal(true)} style={ms.viewMapBtn}>
+              <button onClick={() => { setShowModal(true); setSidebarOpen(false); }} style={ms.viewMapBtn}>
                 🗺 View Full Map
               </button>
             )}
           </>
         )}
       </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+      {/* Main chat area */}
+      <div className="chat-panel-wrap" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+        <button
+          className="sidebar-toggle-btn"
+          onClick={() => setSidebarOpen(o => !o)}
+          style={{
+            display: "none",
+            position: "absolute",
+            top: 12,
+            right: 12,
+            zIndex: 10,
+            background: "var(--bg-input)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 8,
+            color: "var(--text-secondary)",
+            fontSize: 12,
+            fontWeight: 600,
+            padding: "6px 10px",
+            cursor: "pointer",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          ☰ Shelters
+        </button>
         <ChatWidget startLocation={startLocation} onNewRawData={onNewRawData} />
       </div>
     </div>
@@ -374,11 +436,11 @@ function AboutPage() {
   );
 }
 const abouts: Record<string, React.CSSProperties> = {
-  page: { maxWidth: 820, margin: "0 auto", padding: "48px 24px 80px" },
+  page: { maxWidth: 820, margin: "0 auto", padding: "48px 20px 80px" },
   h2: { fontSize: 28, fontWeight: 800, color: "var(--text-heading)", marginBottom: 16 },
   h3: { fontSize: 18, fontWeight: 700, color: "var(--text-heading)", marginBottom: 16 },
   p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 32 },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 40 },
+  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 40 },
   card: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "20px" },
   cardTitle: { fontWeight: 700, color: "var(--text-heading)", marginBottom: 6, fontSize: 14 },
   cardDesc: { fontSize: 13, color: "var(--text-card-desc)", lineHeight: 1.6 },
@@ -388,54 +450,32 @@ const abouts: Record<string, React.CSSProperties> = {
   tag: { background: "var(--bg-tag)", border: "1px solid var(--border-subtle)", borderRadius: 999, padding: "4px 12px", fontSize: 12, color: "var(--text-tag)" },
 };
 
-// ── Resources Page 
+// ── Resources Page ────────────────────────────────────────────────────────────
 function ResourcesPage() {
   function getDomain(url: string) {
-    try {
-      return new URL(url).hostname.replace(/^www\./, "");
-    } catch {
-      return url;
-    }
+    try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
   }
-
   function getFaviconUrl(url: string) {
-    const domain = getDomain(url);
-    // Lightweight, CORS-friendly favicon fetch
-    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(getDomain(url))}&sz=64`;
   }
-
   const resources: { title: string; url: string; note?: string }[] = [
     { title: "DESPP Resources for Individuals", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/resources-for-individuals", note: "Official CT DEMHS hub for individual and family emergency preparedness, covering hazard preparedness tips, mitigation advice for homeowners, volunteering opportunities, accessibility resources, and links to the CT Ready personal preparedness guide." },
     { title: "Know Your Zone! Shoreline Evacuation Maps", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/summer-weather-awareness/know-your-zone-evacuation-maps?language=en_US", note: "Official CT DEMHS shoreline evacuation maps for Connecticut's coastal areas." },
     { title: "CT Ready! Personal Preparedness Guide", url: "https://portal.ct.gov/dph/-/media/departments-and-agencies/dph/public-health-preparedness/prep-guide-2020/english-ct-ready-guide.pdf?rev=9854487064f140e083d6332de56c1c1c&hash=6AE2BF813546AA015A0965E20E446219", note: "Official CT Department of Public Health CT Ready! Personal Preparedness Guide." },
     { title: "DESPP Staying Informed", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/staying-informed?language=en_US", note: "Official CT DEMHS hub for staying informed about emergency preparedness and disaster information." },
   ];
-
   return (
     <div style={resourcesS.page}>
       <h2 style={resourcesS.h2}>Connecticut Resources</h2>
-      <p style={resourcesS.p}>
-        Use these links for trusted emergency information, preparedness guidance, and official updates. In a real emergency,
-        always follow instructions from local authorities.
-      </p>
-
+      <p style={resourcesS.p}>Use these links for trusted emergency information, preparedness guidance, and official updates. In a real emergency, always follow instructions from local authorities.</p>
       <div style={resourcesS.list}>
         {resources.map((r) => (
           <div key={r.title} style={resourcesS.item}>
             <div style={resourcesS.row}>
-              <img
-                src={getFaviconUrl(r.url)}
-                alt=""
-                style={resourcesS.thumb}
-                loading="lazy"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
-                }}
-              />
+              <img src={getFaviconUrl(r.url)} alt="" style={resourcesS.thumb} loading="lazy"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
               <div style={{ minWidth: 0 }}>
-                <a href={r.url} target="_blank" rel="noreferrer" style={resourcesS.link}>
-                  {r.title}
-                </a>
+                <a href={r.url} target="_blank" rel="noreferrer" style={resourcesS.link}>{r.title}</a>
                 <div style={resourcesS.meta}>{getDomain(r.url)}</div>
                 {r.note && <div style={resourcesS.note}>{r.note}</div>}
               </div>
@@ -446,9 +486,8 @@ function ResourcesPage() {
     </div>
   );
 }
-
 const resourcesS: Record<string, React.CSSProperties> = {
-  page: { maxWidth: 820, margin: "0 auto", padding: "48px 24px 80px" },
+  page: { maxWidth: 820, margin: "0 auto", padding: "48px 20px 80px" },
   h2: { fontSize: 28, fontWeight: 800, color: "var(--text-heading)", marginBottom: 16 },
   p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 28 },
   list: { display: "flex", flexDirection: "column", gap: 12 },
@@ -489,10 +528,10 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-page)", color: "var(--text-primary)", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       <Nav page={page} setPage={setPage} isDark={isDark} toggleTheme={toggleTheme} />
-      {page === "home"  && <HomePage setPage={setPage} />}
-      {page === "map"   && <MapPage sharedRawData={sharedRawData} startLocation={startLocation} setStartLocation={setStartLocation} onNewRawData={handleNewRawData} />}
+      {page === "home"      && <HomePage setPage={setPage} />}
+      {page === "map"       && <MapPage sharedRawData={sharedRawData} startLocation={startLocation} setStartLocation={setStartLocation} onNewRawData={handleNewRawData} />}
       {page === "resources" && <ResourcesPage />}
-      {page === "about" && <AboutPage />}
+      {page === "about"     && <AboutPage />}
     </div>
   );
 }

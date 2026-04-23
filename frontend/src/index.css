@@ -1,6 +1,5 @@
 /* ── Theme variables ───────────────────────────────────────────────────────── */
 :root {
-  /* Dark mode (default) */
   --bg-page:          #0a0c14;
   --bg-nav:           #0d0f17;
   --bg-sidebar:       #0d0f17;
@@ -12,6 +11,8 @@
 
   --border-main:      #1e2130;
   --border-subtle:    #2a2d3a;
+  --border-bubble-user: transparent;
+  --border-bubble-asst: #2a2d3a;
 
   --text-primary:     #e8e8e8;
   --text-secondary:   #9aa0b8;
@@ -41,7 +42,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Light mode overrides */
 :root.light {
   --bg-page:          #f4f5f7;
   --bg-nav:           #ffffff;
@@ -111,4 +111,99 @@ button {
 }
 button:focus, button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* ── Mobile nav dropdown ─────────────────────────────────────────────────── */
+.mobile-nav-menu {
+  display: none;
+  flex-direction: column;
+  position: fixed;
+  top: 56px;
+  left: 0;
+  right: 0;
+  background: var(--bg-nav);
+  border-bottom: 1px solid var(--border-main);
+  padding: 8px 16px 16px;
+  gap: 4px;
+  z-index: 999;
+}
+.mobile-nav-menu.open { display: flex; }
+.mobile-nav-menu button {
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 15px;
+}
+
+/* ── Sidebar drawer on mobile ────────────────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 900;
+}
+.sidebar-overlay.open { display: block; }
+
+/* ── Media queries ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .desktop-nav-links { display: none !important; }
+  .hamburger-btn { display: flex !important; }
+
+  .home-cards {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .map-page {
+    flex-direction: column !important;
+  }
+
+  .sidebar-drawer {
+    position: fixed !important;
+    top: 56px !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 300px !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.25s ease !important;
+    z-index: 901 !important;
+  }
+  .sidebar-drawer.open {
+    transform: translateX(0) !important;
+  }
+
+  .chat-panel-wrap {
+    flex: 1 !important;
+    width: 100% !important;
+    height: calc(100vh - 56px) !important;
+  }
+
+  .sidebar-toggle-btn {
+    display: flex !important;
+  }
+
+  .full-map-modal-sheet {
+    max-width: 100% !important;
+    height: 95vh !important;
+    border-radius: 12px 12px 0 0 !important;
+    margin-top: auto !important;
+  }
+
+  .full-map-modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .sidebar-close-btn {
+    display: block !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-cards {
+    grid-template-columns: 1fr !important;
+  }
+  .home-hero h1 {
+    font-size: 32px !important;
+  }
 }

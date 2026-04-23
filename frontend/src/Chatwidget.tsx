@@ -71,14 +71,25 @@ function getRoute(shelter: Shelter, userCoord?: Coord): Coord[] | null {
   return userCoord ? [userCoord, ...pts] : pts;
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return isMobile;
+}
+
 function InlineMap({ center, shelters }: { center: Coord; shelters: Shelter[] }) {
+  const isMobile = useIsMobile();
   return (
-    <div style={styles.mapBubble}>
+    <div style={{ ...styles.mapBubble, width: isMobile ? "95%" : "82%", maxWidth: isMobile ? "95%" : "82%" }}>
       <div style={styles.mapLabel}>
         <span style={{ color: "var(--accent)" }}>🗺</span>
         <span>{shelters.length} shelter{shelters.length !== 1 ? "s" : ""} near you</span>
       </div>
-      <div style={styles.mapContainer}>
+      <div style={{ ...styles.mapContainer, height: isMobile ? 200 : 240 }}>
         <style>{`
           .inline-map .leaflet-container { background: #e8e0d8 !important; border-radius: 10px; }
           .inline-map .leaflet-control-attribution { font-size: 8px !important; opacity: 0.35 !important; }
@@ -140,6 +151,7 @@ function InlineMap({ center, shelters }: { center: Coord; shelters: Shelter[] })
 }
 
 export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetProps) {
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -242,6 +254,9 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
   }
 
+  const userBubbleMax = isMobile ? "85%" : "60%";
+  const asstBubbleMax = isMobile ? "90%" : "75%";
+
   return (
     <>
       <style>{`
@@ -261,7 +276,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
           <span style={styles.headerIcon}>⚠</span>
           <div>
             <div style={styles.headerTitle}>DisasterRoute Assistant</div>
-            <div style={styles.headerSub}>Ask about shelters, routes, flood risk, or emergency preparedness</div>
+            {!isMobile && <div style={styles.headerSub}>Ask about shelters, routes, flood risk, or emergency preparedness</div>}
           </div>
         </div>
 
@@ -280,7 +295,10 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
             return (
               <div key={i} style={textMsg.role === "user" ? styles.userWrap : styles.assistantWrap}>
                 {textMsg.role === "assistant" && <div style={styles.avatar}>⚠</div>}
-                <div style={textMsg.role === "user" ? styles.userBubble : styles.assistantBubble}>
+                <div style={{
+                  ...(textMsg.role === "user" ? styles.userBubble : styles.assistantBubble),
+                  maxWidth: textMsg.role === "user" ? userBubbleMax : asstBubbleMax,
+                }}>
                   {textMsg.error
                     ? <span style={styles.errorText}>{textMsg.error}</span>
                     : <ReactMarkdown>{textMsg.content}</ReactMarkdown>
@@ -293,7 +311,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
           {loading && (
             <div style={styles.assistantWrap}>
               <div style={styles.avatar}>⚠</div>
-              <div style={styles.assistantBubble}>
+              <div style={{ ...styles.assistantBubble, maxWidth: asstBubbleMax }}>
                 <div style={styles.dotsWrap}>
                   <span className="chat-dot" style={{ animationDelay: "0s" }} />
                   <span className="chat-dot" style={{ animationDelay: "0.2s" }} />
@@ -315,7 +333,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask about shelters or routes..."
-            rows={2}
+            rows={isMobile ? 1 : 2}
             style={styles.textarea}
           />
           {loading ? (
@@ -330,7 +348,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
             </button>
           )}
         </div>
-        <div style={styles.hint}>Enter to send · Shift+Enter for new line</div>
+        {!isMobile && <div style={styles.hint}>Enter to send · Shift+Enter for new line</div>}
       </div>
     </>
   );
@@ -338,7 +356,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
 
 const styles: Record<string, React.CSSProperties> = {
   panel: { display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-page)" },
-  header: { display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", background: "var(--bg-nav)", borderBottom: "1px solid var(--border-main)", flexShrink: 0 },
+  header: { display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "var(--bg-nav)", borderBottom: "1px solid var(--border-main)", flexShrink: 0 },
   headerIcon: { fontSize: 20, color: "var(--accent)" },
   headerTitle: { fontSize: 14, fontWeight: 700, color: "var(--text-heading)" },
   headerSub: { fontSize: 11, color: "var(--text-muted)" },
@@ -346,10 +364,11 @@ const styles: Record<string, React.CSSProperties> = {
   userWrap: { display: "flex", justifyContent: "flex-end", width: "100%" },
   assistantWrap: { display: "flex", alignItems: "flex-start", gap: 6, width: "100%" },
   avatar: { width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0, marginTop: 2, color: "#fff" },
-  userBubble: { background: "var(--bg-bubble-user)", border: "1px solid var(--border-bubble-user)", borderRadius: "14px 14px 4px 14px", padding: "10px 14px", maxWidth: "60%", fontSize: 13, lineHeight: 1.5, color: "var(--text-user-bubble)" },  assistantBubble: { background: "var(--bg-bubble-asst)", border: "1px solid var(--border-bubble-asst)", borderRadius: "14px 14px 14px 4px", padding: "10px 14px", maxWidth: "75%", fontSize: 13, lineHeight: 1.5, color: "var(--text-primary)" },
+  userBubble: { background: "var(--bg-bubble-user)", border: "1px solid var(--border-bubble-user)", borderRadius: "14px 14px 4px 14px", padding: "10px 14px", maxWidth: "60%", fontSize: 13, lineHeight: 1.5, color: "var(--text-user-bubble)" },
+  assistantBubble: { background: "var(--bg-bubble-asst)", border: "1px solid var(--border-bubble-asst)", borderRadius: "14px 14px 14px 4px", padding: "10px 14px", maxWidth: "75%", fontSize: 13, lineHeight: 1.5, color: "var(--text-primary)" },
   errorText: { color: "var(--accent)", fontSize: 12 },
   dotsWrap: { display: "flex", gap: 4, alignItems: "center", padding: "4px 2px" },
-  inputArea: { display: "flex", gap: 6, padding: "10px 12px 6px", borderTop: "1px solid var(--border-main)", background: "var(--bg-nav)", flexShrink: 0 },
+  inputArea: { display: "flex", gap: 6, padding: "8px 10px 6px", borderTop: "1px solid var(--border-main)", background: "var(--bg-nav)", flexShrink: 0 },
   textarea: { flex: 1, background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "6px 10px", color: "var(--text-primary)", fontSize: 13, resize: "none", outline: "none", lineHeight: 1.5, fontFamily: "inherit" },
   sendBtn: { background: "var(--accent)", color: "#fff", border: "none", borderRadius: 8, width: 36, fontSize: 16, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
   hint: { padding: "2px 12px 8px", fontSize: 10, color: "var(--text-faint)", background: "var(--bg-nav)" },
