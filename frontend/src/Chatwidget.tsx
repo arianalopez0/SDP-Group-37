@@ -71,82 +71,69 @@ function getRoute(shelter: Shelter, userCoord?: Coord): Coord[] | null {
   return userCoord ? [userCoord, ...pts] : pts;
 }
 
-// Small inline map rendered as a chat bubble
 function InlineMap({ center, shelters }: { center: Coord; shelters: Shelter[] }) {
   return (
     <div style={styles.mapBubble}>
       <div style={styles.mapLabel}>
-        <span style={{ color: "#e63946" }}>🗺</span>
+        <span style={{ color: "var(--accent)" }}>🗺</span>
         <span>{shelters.length} shelter{shelters.length !== 1 ? "s" : ""} near you</span>
       </div>
       <div style={styles.mapContainer}>
         <style>{`
-          .leaflet-container { background: #e8e0d8 !important; border-radius: 10px; }
-          .leaflet-control-attribution { font-size: 8px !important; opacity: 0.35 !important; }
-          .leaflet-control-zoom a { background: #1e2130 !important; color: #e8e8e8 !important; border-color: #2a2d3a !important; }
-          .leaflet-control-zoom a:hover { background: #2a2d3a !important; }
+          .inline-map .leaflet-container { background: #e8e0d8 !important; border-radius: 10px; }
+          .inline-map .leaflet-control-attribution { font-size: 8px !important; opacity: 0.35 !important; }
+          .inline-map .leaflet-control-zoom a { background: var(--bg-input) !important; color: var(--text-primary) !important; border-color: var(--border-subtle) !important; }
+          .inline-map .leaflet-control-zoom a:hover { background: var(--border-subtle) !important; }
         `}</style>
-        <MapContainer
-          center={center}
-          zoom={12}
-          style={{ width: "100%", height: "100%", borderRadius: 10 }}
-          scrollWheelZoom={true}
-        >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          />
-          {/* User location dot */}
-          <Marker
-            position={center}
-            icon={L.divIcon({
+        <div className="inline-map" style={{ width: "100%", height: "100%" }}>
+          <MapContainer
+            center={center}
+            zoom={12}
+            style={{ width: "100%", height: "100%", borderRadius: 10 }}
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+            />
+            <Marker position={center} icon={L.divIcon({
               className: "",
               html: `<div style="background:#1a86e8;border:3px solid #fff;border-radius:50%;width:14px;height:14px;box-shadow:0 0 0 3px rgba(26,134,232,0.35)"></div>`,
-              iconSize: [14, 14],
-              iconAnchor: [7, 7],
-            })}
-          >
-            <Popup><strong>📍 You are here</strong></Popup>
-          </Marker>
-
-          {shelters.map((s, idx) => {
-            const pos: Coord = [s.lat, s.lon];
-            const route = getRoute(s, center);
-            const color = markerColors[idx % markerColors.length];
-            return (
-              <Fragment key={idx}>
-                <Marker
-                  position={pos}
-                  icon={L.divIcon({
+              iconSize: [14, 14], iconAnchor: [7, 7],
+            })}>
+              <Popup><strong>📍 You are here</strong></Popup>
+            </Marker>
+            {shelters.map((s, idx) => {
+              const pos: Coord = [s.lat, s.lon];
+              const route = getRoute(s, center);
+              const color = markerColors[idx % markerColors.length];
+              return (
+                <Fragment key={idx}>
+                  <Marker position={pos} icon={L.divIcon({
                     className: "",
                     html: `<div style="background:${color};border:2px solid #fff;border-radius:50% 50% 50% 0;width:16px;height:16px;transform:rotate(-45deg);box-shadow:0 2px 5px rgba(0,0,0,0.4)"><span style="transform:rotate(45deg);display:block;text-align:center;font-size:8px;line-height:16px;color:#fff;font-weight:700">${idx + 1}</span></div>`,
-                    iconSize: [16, 16],
-                    iconAnchor: [8, 16],
-                  })}
-                >
-                  <Popup>
-                    <strong>{s.name}</strong><br />
-                    {s.address}, {s.city}<br />
-                    <span style={{ color: s.status === "OPEN" ? "#2a9d8f" : "#e63946" }}>{s.status}</span>
-                    {s.straightline_distance_miles != null && <><br />{s.straightline_distance_miles} mi away</>}
-                  </Popup>
-                  <Tooltip direction="top" offset={[0, -18]} opacity={0.95}>
-                    <span style={{ fontSize: 11 }}><strong>#{idx + 1}</strong> {s.name}</span>
-                  </Tooltip>
-                </Marker>
-                {route && (
-                  <Polyline
-                    positions={route}
-                    color={color}
-                    weight={idx === 0 ? 4 : 2.5}
-                    opacity={idx === 0 ? 0.9 : 0.5}
-                    dashArray={idx === 0 ? undefined : "7 5"}
-                  />
-                )}
-              </Fragment>
-            );
-          })}
-        </MapContainer>
+                    iconSize: [16, 16], iconAnchor: [8, 16],
+                  })}>
+                    <Popup>
+                      <strong>{s.name}</strong><br />
+                      {s.address}, {s.city}<br />
+                      <span style={{ color: s.status === "OPEN" ? "#2a9d8f" : "#e63946" }}>{s.status}</span>
+                      {s.straightline_distance_miles != null && <><br />{s.straightline_distance_miles} mi away</>}
+                    </Popup>
+                    <Tooltip direction="top" offset={[0, -18]} opacity={0.95}>
+                      <span style={{ fontSize: 11 }}><strong>#{idx + 1}</strong> {s.name}</span>
+                    </Tooltip>
+                  </Marker>
+                  {route && (
+                    <Polyline positions={route} color={color}
+                      weight={idx === 0 ? 4 : 2.5} opacity={idx === 0 ? 0.9 : 0.5}
+                      dashArray={idx === 0 ? undefined : "7 5"} />
+                  )}
+                </Fragment>
+              );
+            })}
+          </MapContainer>
+        </div>
       </div>
     </div>
   );
@@ -157,7 +144,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
     {
       role: "assistant",
       type: "text",
-      content: "Hi! I'm your disaster resilience assistant. Ask me about nearby shelters, flood risk, or evacuation routes.",
+      content: "Hi! I'm your disaster resilience assistant. Ask me about nearby shelters, flood risk, evacuation routes, or emergency preparedness.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -224,13 +211,11 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
         return;
       }
 
-      // Add text response
       const nextMessages: Message[] = [
         ...newMessages,
         { role: "assistant", type: "text", content: data.response ?? "" },
       ];
 
-      // If there's shelter data, append an inline map message
       if (data.raw_data) {
         const center = getCenter(data.raw_data);
         const shelters = getShelters(data.raw_data);
@@ -263,7 +248,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
         }
         .chat-dot {
           width: 7px; height: 7px; border-radius: 50%;
-          background: #7a7f94; display: inline-block;
+          background: var(--text-muted); display: inline-block;
           animation: chatBounce 1.2s infinite ease-in-out;
         }
       `}</style>
@@ -279,17 +264,14 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
 
         <div style={styles.messageList}>
           {messages.map((msg, i) => {
-            // Inline map bubble
             if (msg.type === "map") {
               return (
-                <div key={i} style={{ ...styles.assistantWrap }}>
+                <div key={i} style={styles.assistantWrap}>
                   <div style={styles.avatar}>⚠</div>
                   <InlineMap center={(msg as MapMessage).center} shelters={(msg as MapMessage).shelters} />
                 </div>
               );
             }
-
-            // Regular text bubble
             const textMsg = msg as TextMessage;
             return (
               <div key={i} style={textMsg.role === "user" ? styles.userWrap : styles.assistantWrap}>
@@ -313,7 +295,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
                   <span className="chat-dot" style={{ animationDelay: "0.2s" }} />
                   <span className="chat-dot" style={{ animationDelay: "0.4s" }} />
                 </div>
-                <div style={{ fontSize: 11, color: "#4a4f62", marginTop: 6, fontStyle: "italic" }}>
+                <div style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 6, fontStyle: "italic" }}>
                   {loadingMessages[loadingMsgIdx]}
                 </div>
               </div>
@@ -333,15 +315,9 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
             style={styles.textarea}
           />
           {loading ? (
-            <button onClick={stopQuery} style={{ ...styles.sendBtn, background: "#2a2d3a", fontSize: 14 }}>■</button>
+            <button onClick={stopQuery} style={{ ...styles.sendBtn, background: "var(--bg-input)", fontSize: 14 }}>■</button>
           ) : (
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim()}
-              style={{ ...styles.sendBtn, opacity: !input.trim() ? 0.45 : 1 }}
-            >
-              ➤
-            </button>
+            <button onClick={sendMessage} disabled={!input.trim()} style={{ ...styles.sendBtn, opacity: !input.trim() ? 0.45 : 1 }}>➤</button>
           )}
         </div>
         <div style={styles.hint}>Enter to send · Shift+Enter for new line</div>
@@ -351,25 +327,24 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  panel: { display: "flex", flexDirection: "column", height: "100%", background: "#0a0c14" },
-  header: { display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", background: "#0d0f17", borderBottom: "1px solid #1e2130", flexShrink: 0 },
-  headerIcon: { fontSize: 20, color: "#e63946" },
-  headerTitle: { fontSize: 14, fontWeight: 700, color: "#fff" },
-  headerSub: { fontSize: 11, color: "#7a7f94" },
+  panel: { display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-page)" },
+  header: { display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", background: "var(--bg-nav)", borderBottom: "1px solid var(--border-main)", flexShrink: 0 },
+  headerIcon: { fontSize: 20, color: "var(--accent)" },
+  headerTitle: { fontSize: 14, fontWeight: 700, color: "var(--text-heading)" },
+  headerSub: { fontSize: 11, color: "var(--text-muted)" },
   messageList: { flex: 1, overflowY: "auto", padding: "14px 12px", display: "flex", flexDirection: "column", gap: 12 },
   userWrap: { display: "flex", justifyContent: "flex-end", width: "100%" },
   assistantWrap: { display: "flex", alignItems: "flex-start", gap: 6, width: "100%" },
-  avatar: { width: 24, height: 24, borderRadius: "50%", background: "#e63946", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0, marginTop: 2 },
-  userBubble: { background: "#1e3a5f", borderRadius: "14px 14px 4px 14px", padding: "10px 14px", maxWidth: "60%", fontSize: 13, lineHeight: 1.5, color: "#ddeeff" },
-  assistantBubble: { background: "#1e2130", border: "1px solid #2a2d3a", borderRadius: "14px 14px 14px 4px", padding: "10px 14px", maxWidth: "75%", fontSize: 13, lineHeight: 1.5, color: "#e8e8e8" },
-  errorText: { color: "#e63946", fontSize: 12 },
+  avatar: { width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0, marginTop: 2, color: "#fff" },
+  userBubble: { background: "var(--bg-bubble-user)", borderRadius: "14px 14px 4px 14px", padding: "10px 14px", maxWidth: "60%", fontSize: 13, lineHeight: 1.5, color: "var(--text-user-bubble)" },
+  assistantBubble: { background: "var(--bg-bubble-asst)", border: "1px solid var(--border-subtle)", borderRadius: "14px 14px 14px 4px", padding: "10px 14px", maxWidth: "75%", fontSize: 13, lineHeight: 1.5, color: "var(--text-primary)" },
+  errorText: { color: "var(--accent)", fontSize: 12 },
   dotsWrap: { display: "flex", gap: 4, alignItems: "center", padding: "4px 2px" },
-  inputArea: { display: "flex", gap: 6, padding: "10px 12px 6px", borderTop: "1px solid #1e2130", background: "#0d0f17", flexShrink: 0 },
-  textarea: { flex: 1, background: "#1e2130", border: "1px solid #2a2d3a", borderRadius: 8, padding: "6px 10px", color: "#e8e8e8", fontSize: 13, resize: "none", outline: "none", lineHeight: 1.5, fontFamily: "inherit" },
-  sendBtn: { background: "#e63946", color: "#fff", border: "none", borderRadius: 8, width: 36, fontSize: 16, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
-  hint: { padding: "2px 12px 8px", fontSize: 10, color: "#4a4f62", background: "#0d0f17" },
-  // Map bubble styles
-  mapBubble: { background: "#13161f", border: "1px solid #2a2d3a", borderRadius: "14px 14px 14px 4px", padding: "10px", maxWidth: "82%", width: "82%" },
-  mapLabel: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#9aa0b8", fontWeight: 600, marginBottom: 8 },
+  inputArea: { display: "flex", gap: 6, padding: "10px 12px 6px", borderTop: "1px solid var(--border-main)", background: "var(--bg-nav)", flexShrink: 0 },
+  textarea: { flex: 1, background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "6px 10px", color: "var(--text-primary)", fontSize: 13, resize: "none", outline: "none", lineHeight: 1.5, fontFamily: "inherit" },
+  sendBtn: { background: "var(--accent)", color: "#fff", border: "none", borderRadius: 8, width: 36, fontSize: 16, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
+  hint: { padding: "2px 12px 8px", fontSize: 10, color: "var(--text-faint)", background: "var(--bg-nav)" },
+  mapBubble: { background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "14px 14px 14px 4px", padding: "10px", maxWidth: "82%", width: "82%" },
+  mapLabel: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-map-label)", fontWeight: 600, marginBottom: 8 },
   mapContainer: { width: "100%", height: 240, borderRadius: 10, overflow: "hidden" },
 };
