@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip } from "react-leaflet";
 import L from "leaflet";
-import ChatWidget from "./ChatWidget";
+import ChatWidget from "./Chatwidget";
 
 type Page = "home" | "map" | "about";
 
