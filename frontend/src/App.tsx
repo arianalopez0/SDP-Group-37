@@ -370,9 +370,25 @@ const abouts: Record<string, React.CSSProperties> = {
 
 // ── Resources Page 
 function ResourcesPage() {
+  function getDomain(url: string) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
+  }
+
+  function getFaviconUrl(url: string) {
+    const domain = getDomain(url);
+    // Lightweight, CORS-friendly favicon fetch
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+  }
+
   const resources: { title: string; url: string; note?: string }[] = [
-    { title: "DESPP Resources for Individuals", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/resources-for-individuals", note: "" },
-    { title: "Resource Title 2", url: "https://example.com" },
+    { title: "DESPP Resources for Individuals", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/resources-for-individuals", note: "Official CT DEMHS hub for individual and family emergency preparedness, covering hazard preparedness tips, mitigation advice for homeowners, volunteering opportunities, accessibility resources, and links to the CT Ready personal preparedness guide." },
+    { title: "Know Your Zone! Shoreline Evacuation Maps", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/summer-weather-awareness/know-your-zone-evacuation-maps?language=en_US", note: "Official CT DEMHS shoreline evacuation maps for Connecticut's coastal areas." },
+    { title: "CT Ready! Personal Preparedness Guide", url: "https://portal.ct.gov/dph/-/media/departments-and-agencies/dph/public-health-preparedness/prep-guide-2020/english-ct-ready-guide.pdf?rev=9854487064f140e083d6332de56c1c1c&hash=6AE2BF813546AA015A0965E20E446219", note: "Official CT Department of Public Health CT Ready! Personal Preparedness Guide." },
+    { title: "DESPP Staying Informed", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/staying-informed?language=en_US", note: "Official CT DEMHS hub for staying informed about emergency preparedness and disaster information." },
   ];
 
   return (
@@ -386,10 +402,24 @@ function ResourcesPage() {
       <div style={resourcesS.list}>
         {resources.map((r) => (
           <div key={r.title} style={resourcesS.item}>
-            <a href={r.url} target="_blank" rel="noreferrer" style={resourcesS.link}>
-              {r.title}
-            </a>
-            {r.note && <div style={resourcesS.note}>{r.note}</div>}
+            <div style={resourcesS.row}>
+              <img
+                src={getFaviconUrl(r.url)}
+                alt=""
+                style={resourcesS.thumb}
+                loading="lazy"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                }}
+              />
+              <div style={{ minWidth: 0 }}>
+                <a href={r.url} target="_blank" rel="noreferrer" style={resourcesS.link}>
+                  {r.title}
+                </a>
+                <div style={resourcesS.meta}>{getDomain(r.url)}</div>
+                {r.note && <div style={resourcesS.note}>{r.note}</div>}
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -403,7 +433,10 @@ const resourcesS: Record<string, React.CSSProperties> = {
   p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 28 },
   list: { display: "flex", flexDirection: "column", gap: 12 },
   item: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "14px 16px" },
+  row: { display: "flex", gap: 12, alignItems: "flex-start" },
+  thumb: { width: 32, height: 32, borderRadius: 8, border: "1px solid var(--border-subtle)", background: "var(--bg-input)", flexShrink: 0 },
   link: { color: "var(--text-heading)", fontWeight: 700, textDecoration: "none", fontSize: 14 },
+  meta: { marginTop: 4, fontSize: 11, color: "var(--text-muted)" },
   note: { marginTop: 6, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 },
 };
 
