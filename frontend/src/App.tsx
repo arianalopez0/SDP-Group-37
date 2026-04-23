@@ -96,12 +96,12 @@ function HomePage({ setPage }: { setPage: (p: Page) => void }) {
           {
             icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="#2a9d8f"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>,
             title: "AI Assistant",
-            desc: "Ask questions in plain language — our AI finds and explains your best options."
+            desc: "Ask questions in plain language. Our AI finds and explains your best options."
           },
           {
             icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="#f4a261"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2 8H7v-2h4v2zm4-4H7v-2h8v2z"/></svg>,
             title: "Emergency Preparedness",
-            desc: "Ask about what to pack, how to prepare, and what to do during specific disasters — answered from official emergency guidance."
+            desc: "Ask about what to pack, how to prepare, and what to do during specific disasters. Answered from official emergency guidance."
           },
           {
             icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="#e63946"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-5h2v2h-2zm0-8h2v6h-2z"/></svg>,
