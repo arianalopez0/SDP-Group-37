@@ -65,13 +65,55 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
               </button>
             ))}
           </div>
-          <button onClick={toggleTheme} style={ns.themeBtn} title="Toggle theme">
-            {isDark ? "☀" : "🌙"}
-          </button>
+
+          {/* Theme toggle */}
+          <div
+            onClick={toggleTheme}
+            title="Toggle theme"
+            style={{
+              width: 80, height: 26,
+              background: isDark ? "#2a2d3a" : "var(--accent)",
+              borderRadius: 13,
+              border: `1px solid ${isDark ? "#3a3d4a" : "#c82030"}`,
+              position: "relative",
+              cursor: "pointer",
+              marginLeft: 8,
+              flexShrink: 0,
+              transition: "background 0.2s",
+            }}
+          >
+            <div style={{
+              position: "absolute",
+              top: 3,
+              left: isDark ? 3 : undefined,
+              right: isDark ? undefined : 3,
+              width: 20, height: 20,
+              background: "#fff",
+              borderRadius: "50%",
+              transition: "left 0.2s, right 0.2s",
+            }} />
+            <span style={{
+              position: "absolute",
+              top: "50%",
+              transform: "translateY(-50%)",
+              left: isDark ? undefined : 8,
+              right: isDark ? 8 : undefined,
+              fontSize: 10,
+              fontWeight: 600,
+              color: isDark ? "#7a7f94" : "#fff",
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+              whiteSpace: "nowrap" as const,
+            }}>
+              {isDark ? <>☀ Dark</> : <>🌙 Light</>}
+            </span>
+          </div>
+
           <button
             className="hamburger-btn"
             onClick={() => setMenuOpen(o => !o)}
-            style={{ ...ns.themeBtn, display: "none", fontSize: 18, padding: "4px 8px" }}
+            style={{ background: "none", border: "1px solid var(--border-subtle)", color: "var(--text-muted)", fontSize: 18, cursor: "pointer", padding: "4px 8px", borderRadius: 6, marginLeft: 8, display: "none" }}
           >
             {menuOpen ? "✕" : "☰"}
           </button>
@@ -94,7 +136,6 @@ const ns: Record<string, React.CSSProperties> = {
   brandName: { color: "var(--text-heading)", fontWeight: 700, fontSize: 16, letterSpacing: "0.02em" },
   link: { background: "none", border: "none", color: "var(--text-nav-link)", fontSize: 14, cursor: "pointer", padding: "6px 14px", borderRadius: 6, fontWeight: 500 },
   linkActive: { color: "var(--text-nav-active)", background: "var(--bg-input)" },
-  themeBtn: { background: "none", border: "1px solid var(--border-subtle)", color: "var(--text-muted)", fontSize: 15, cursor: "pointer", padding: "4px 10px", borderRadius: 6, marginLeft: 8 },
 };
 
 // ── Home Page ─────────────────────────────────────────────────────────────────
@@ -280,14 +321,7 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData 
       {showModal && center && (
         <FullMapModal center={center} shelters={shelters} onClose={() => setShowModal(false)} />
       )}
-
-      {/* Mobile sidebar overlay */}
-      <div
-        className={`sidebar-overlay${sidebarOpen ? " open" : ""}`}
-        onClick={() => setSidebarOpen(false)}
-      />
-
-      {/* Sidebar */}
+      <div className={`sidebar-overlay${sidebarOpen ? " open" : ""}`} onClick={() => setSidebarOpen(false)} />
       <div className={`sidebar-drawer${sidebarOpen ? " open" : ""}`} style={ms.sidebar}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
           <h2 style={ms.sideTitle}>Nearby Shelters</h2>
@@ -354,8 +388,6 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData 
           </>
         )}
       </div>
-
-      {/* Main chat area */}
       <div className="chat-panel-wrap" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
         <button
           className="sidebar-toggle-btn"
@@ -363,8 +395,7 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData 
           style={{
             display: "none",
             position: "absolute",
-            top: 12,
-            right: 12,
+            top: 12, right: 12,
             zIndex: 10,
             background: "var(--bg-input)",
             border: "1px solid var(--border-subtle)",
