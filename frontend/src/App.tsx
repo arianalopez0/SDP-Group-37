@@ -82,19 +82,39 @@ function HomePage({ setPage }: { setPage: (p: Page) => void }) {
         <button onClick={() => setPage("map")} style={hs.cta}>Get Assistance →</button>
       </div>
       <div style={hs.cards}>
-        {[
-          { icon: "🗺", title: "Interactive Shelter Map", desc: "See open shelters near you with real-time status, distance, and accessibility info displayed on an interactive map." },
-          { icon: "🤖", title: "AI Assistant", desc: "Ask questions in plain language. Our AI finds and explains your best options." },
-          { icon: "📋", title: "Emergency Preparedness", desc: "Ask about what to pack, how to prepare, and what to do during specific disasters. Answered from official emergency guidance." },
-          { icon: "🌊", title: "Flood Zone Awareness", desc: "Find out if you're in a FEMA flood zone and get shelter recommendations that account for local hazard risk." },
-          { icon: "🚗", title: "Evacuation Routing", desc: "See road-following routes from your location to nearby shelters, avoiding hazard areas." },
+      {[
+          {
+            icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="#4a9eed"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>,
+            title: "Interactive Shelter Map",
+            desc: "See open shelters near you with status, distance, and accessibility info displayed on an interactive map."
+          },
+          {
+            icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="#2a9d8f"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>,
+            title: "AI Assistant",
+            desc: "Ask questions in plain language — our AI finds and explains your best options."
+          },
+          {
+            icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="#f4a261"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2 8H7v-2h4v2zm4-4H7v-2h8v2z"/></svg>,
+            title: "Emergency Preparedness",
+            desc: "Ask about what to pack, how to prepare, and what to do during specific disasters — answered from official emergency guidance."
+          },
+          {
+            icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="#e63946"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-5h2v2h-2zm0-8h2v6h-2z"/></svg>,
+            title: "Flood Zone Awareness",
+            desc: "Find out if you're in a FEMA flood zone and get shelter recommendations that account for local hazard risk."
+          },
+          {
+            icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="#4a9eed"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>,
+            title: "Evacuation Routing",
+            desc: "See road-following routes from your location to nearby shelters, avoiding hazard areas."
+          },
         ].map((c) => (
           <div key={c.title} style={hs.card}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>{c.icon}</div>
+            <div style={{ marginBottom: 10 }}>{c.icon}</div>
             <div style={hs.cardTitle}>{c.title}</div>
             <div style={hs.cardDesc}>{c.desc}</div>
           </div>
-        ))}
+      ))}
       </div>
       <div style={hs.notice}>
         <strong>⚠ This tool is for demonstration and research purposes.</strong> Always follow official emergency broadcasts and local authority guidance during a real disaster.
