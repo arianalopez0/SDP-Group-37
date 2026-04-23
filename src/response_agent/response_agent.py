@@ -112,7 +112,7 @@ If shelters are present:
     if "document_context" in context: # Instructions for document agent context
         prompt+="""
 If document_context is present:
-    - Add a section titled: "Preparedness Guidance (CT Guide)"
+    - Add a section titled with the title of the document
     - Use ONLY document_context.summary_bullets
     - If summary_bullets is empty, use document_context.answer_snippets
     - Do NOT add advice not supported by excerpts

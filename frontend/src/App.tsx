@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip } from "react
 import L from "leaflet";
 import ChatWidget from "./Chatwidget";
 
-type Page = "home" | "map" | "about";
+type Page = "home" | "map" | "resources" | "about";
 
 interface Shelter {
   name: string; address: string; city: string; state: string; zip: string;
@@ -49,10 +49,15 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
         <span style={ns.brandName}>DisasterRoute CT</span>
       </div>
       <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-        {(["home", "map", "about"] as Page[]).map((p) => (
+        {(["home", "map", "resources", "about"] as Page[]).map((p) => (
           <button key={p} onClick={() => setPage(p)}
             style={{ ...ns.link, ...(page === p ? ns.linkActive : {}) }}>
-            {p === "map" ? "Assistance" : p.charAt(0).toUpperCase() + p.slice(1)}
+            {p === "map"
+              ? "Assistance"
+              : p === "resources"
+                ? "Resources"
+                : p.charAt(0).toUpperCase() + p.slice(1)
+            }
           </button>
         ))}
         <button onClick={toggleTheme} style={ns.themeBtn} title="Toggle theme">
@@ -383,6 +388,78 @@ const abouts: Record<string, React.CSSProperties> = {
   tag: { background: "var(--bg-tag)", border: "1px solid var(--border-subtle)", borderRadius: 999, padding: "4px 12px", fontSize: 12, color: "var(--text-tag)" },
 };
 
+// ── Resources Page 
+function ResourcesPage() {
+  function getDomain(url: string) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
+  }
+
+  function getFaviconUrl(url: string) {
+    const domain = getDomain(url);
+    // Lightweight, CORS-friendly favicon fetch
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+  }
+
+  const resources: { title: string; url: string; note?: string }[] = [
+    { title: "DESPP Resources for Individuals", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/resources-for-individuals", note: "Official CT DEMHS hub for individual and family emergency preparedness, covering hazard preparedness tips, mitigation advice for homeowners, volunteering opportunities, accessibility resources, and links to the CT Ready personal preparedness guide." },
+    { title: "Know Your Zone! Shoreline Evacuation Maps", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/summer-weather-awareness/know-your-zone-evacuation-maps?language=en_US", note: "Official CT DEMHS shoreline evacuation maps for Connecticut's coastal areas." },
+    { title: "CT Ready! Personal Preparedness Guide", url: "https://portal.ct.gov/dph/-/media/departments-and-agencies/dph/public-health-preparedness/prep-guide-2020/english-ct-ready-guide.pdf?rev=9854487064f140e083d6332de56c1c1c&hash=6AE2BF813546AA015A0965E20E446219", note: "Official CT Department of Public Health CT Ready! Personal Preparedness Guide." },
+    { title: "DESPP Staying Informed", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/staying-informed?language=en_US", note: "Official CT DEMHS hub for staying informed about emergency preparedness and disaster information." },
+  ];
+
+  return (
+    <div style={resourcesS.page}>
+      <h2 style={resourcesS.h2}>Connecticut Resources</h2>
+      <p style={resourcesS.p}>
+        Use these links for trusted emergency information, preparedness guidance, and official updates. In a real emergency,
+        always follow instructions from local authorities.
+      </p>
+
+      <div style={resourcesS.list}>
+        {resources.map((r) => (
+          <div key={r.title} style={resourcesS.item}>
+            <div style={resourcesS.row}>
+              <img
+                src={getFaviconUrl(r.url)}
+                alt=""
+                style={resourcesS.thumb}
+                loading="lazy"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                }}
+              />
+              <div style={{ minWidth: 0 }}>
+                <a href={r.url} target="_blank" rel="noreferrer" style={resourcesS.link}>
+                  {r.title}
+                </a>
+                <div style={resourcesS.meta}>{getDomain(r.url)}</div>
+                {r.note && <div style={resourcesS.note}>{r.note}</div>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const resourcesS: Record<string, React.CSSProperties> = {
+  page: { maxWidth: 820, margin: "0 auto", padding: "48px 24px 80px" },
+  h2: { fontSize: 28, fontWeight: 800, color: "var(--text-heading)", marginBottom: 16 },
+  p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 28 },
+  list: { display: "flex", flexDirection: "column", gap: 12 },
+  item: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "14px 16px" },
+  row: { display: "flex", gap: 12, alignItems: "flex-start" },
+  thumb: { width: 32, height: 32, borderRadius: 8, border: "1px solid var(--border-subtle)", background: "var(--bg-input)", flexShrink: 0 },
+  link: { color: "var(--text-heading)", fontWeight: 700, textDecoration: "none", fontSize: 14 },
+  meta: { marginTop: 4, fontSize: 11, color: "var(--text-muted)" },
+  note: { marginTop: 6, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 },
+};
+
 // ── Root App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [page, setPage] = useState<Page>("home");
@@ -414,6 +491,7 @@ export default function App() {
       <Nav page={page} setPage={setPage} isDark={isDark} toggleTheme={toggleTheme} />
       {page === "home"  && <HomePage setPage={setPage} />}
       {page === "map"   && <MapPage sharedRawData={sharedRawData} startLocation={startLocation} setStartLocation={setStartLocation} onNewRawData={handleNewRawData} />}
+      {page === "resources" && <ResourcesPage />}
       {page === "about" && <AboutPage />}
     </div>
   );
