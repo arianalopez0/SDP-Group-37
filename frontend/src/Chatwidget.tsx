@@ -197,7 +197,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
 
     try {
       abortRef.current = new AbortController();
-      const res = await fetch("http://localhost:8000/run-query", {
+      const res = await fetch("https://sdp-backend.gentlesand-64dae99e.centralus.azurecontainerapps.io/run-query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -290,7 +290,6 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
                 </div>
               );
             }
-
             const textMsg = msg as TextMessage;
             return (
               <div key={i} style={textMsg.role === "user" ? styles.userWrap : styles.assistantWrap}>
@@ -339,13 +338,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
           {loading ? (
             <button onClick={stopQuery} style={{ ...styles.sendBtn, background: "var(--bg-input)", fontSize: 14 }}>■</button>
           ) : (
-            <button
-              onClick={() => void sendMessage()}
-              disabled={!input.trim()}
-              style={{ ...styles.sendBtn, opacity: !input.trim() ? 0.45 : 1 }}
-            >
-              ➤
-            </button>
+            <button onClick={sendMessage} disabled={!input.trim()} style={{ ...styles.sendBtn, opacity: !input.trim() ? 0.45 : 1 }}>➤</button>
           )}
         </div>
         {!isMobile && <div style={styles.hint}>Enter to send · Shift+Enter for new line</div>}
