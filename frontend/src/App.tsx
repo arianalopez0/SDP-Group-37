@@ -432,27 +432,33 @@ const ms: Record<string, React.CSSProperties> = {
 };
 
 // ── About Page ────────────────────────────────────────────────────────────────
-function AboutPage() {
+function AboutPage({ isDark }: { isDark: boolean }) {
   const team = [
-    { name: "Suining He", role: "Faculty Advisor", icon: "🎓" },
+    { name: "Suining He", role: "Faculty Advisor", photo: "/suining.jpg" },
     { name: "Magdalena Danielewicz", role: "Computer Science & Analytics", icon: "👩‍💻" },
-    { name: "Manasvi Iyengar", role: "Computer Science & Economics", icon: "👩‍💻" },
+    { name: "Manasvi Iyengar", role: "Computer Science & Economics", photo: "/manasvi.jpg" },
     { name: "Connor Cybart", role: "Computer Science", icon: "👨‍💻" },
     { name: "Cameron Chrisanthopoulos", role: "Computer Science & Information Assurance", icon: "👨‍💻" },
     { name: "Ariana Lopez", role: "Data Science & Engineering", icon: "👩‍💻" },
   ];
   return (
     <div style={abouts.page}>
-      <h2 style={abouts.h2}>About DisasterRoute CT</h2>
-      <p style={abouts.p}>DisasterRoute CT is a disaster resilience platform built to help Connecticut residents navigate emergencies by locating nearby shelters, understanding hazard zones, and planning safe evacuation routes.</p>
-      <h3 style={abouts.h3}>Meet the Team</h3>
+      <div style={{ background: isDark ? "rgba(230,57,70, 0.5)" : "var(--accent)", padding: "40px 48px", marginBottom: 32, marginTop: 100, width: "100%", textAlign: "center" as const }}>
+        <h2 style={{ ...abouts.h2, color: "#fff", margin: 0 }}>Meet the Team</h2>
+      </div>   
       <div style={abouts.grid}>
         {team.map((m) => (
-          <div key={m.name} style={abouts.card}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>{m.icon}</div>
+        <div key={m.name} style={abouts.card}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+            <img
+              src={m.photo}
+              alt={m.name}
+              style={{ width: 200, height: 200, borderRadius: "50%", objectFit: "cover", marginBottom: 12, marginTop: 100, border: "2px solid var(--border-subtle)" }}
+            />
             <div style={abouts.cardTitle}>{m.name}</div>
             <div style={abouts.cardDesc}>{m.role}</div>
           </div>
+        </div>
         ))}
       </div>
       <div style={abouts.techStack}>
@@ -467,18 +473,13 @@ function AboutPage() {
   );
 }
 const abouts: Record<string, React.CSSProperties> = {
-  page: { maxWidth: 820, margin: "0 auto", padding: "48px 20px 80px" },
-  h2: { fontSize: 28, fontWeight: 800, color: "var(--text-heading)", marginBottom: 16 },
-  h3: { fontSize: 18, fontWeight: 700, color: "var(--text-heading)", marginBottom: 16 },
-  p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 32 },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 40 },
-  card: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "20px" },
-  cardTitle: { fontWeight: 700, color: "var(--text-heading)", marginBottom: 6, fontSize: 14 },
-  cardDesc: { fontSize: 13, color: "var(--text-card-desc)", lineHeight: 1.6 },
-  techStack: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "20px 24px" },
-  stackLabel: { fontSize: 11, color: "var(--text-muted)", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase" as const, marginBottom: 12 },
-  tags: { display: "flex", flexWrap: "wrap", gap: 8 },
-  tag: { background: "var(--bg-tag)", border: "1px solid var(--border-subtle)", borderRadius: 999, padding: "4px 12px", fontSize: 12, color: "var(--text-tag)" },
+  page: { width: "100%", padding: 0 },  h2: { fontSize: 28, fontWeight: 800, color: "var(--text-heading)", marginBottom: 16 },
+  h3: { fontSize: 18, fontWeight: 700, color: "var(--text-heading)", marginBottom: 16, textAlign: "center" as const },
+  p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 32,  textAlign: "center" as const },
+  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 40, marginTop: 40, padding: "0 40px" },  
+  techStack: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "20px 24px", textAlign: "center" as const, marginTop: 200, maxWidth: 800, margin: "40px auto 0" },  
+  stackLabel: { fontSize: 11, color: "var(--text-muted)", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase" as const, marginBottom: 16 },
+  tags: { display: "flex", flexWrap: "wrap" as const, gap: 8, justifyContent: "center" },  tag: { background: "var(--bg-tag)", border: "1px solid var(--border-subtle)", borderRadius: 999, padding: "4px 12px", fontSize: 12, color: "var(--text-tag)" },
 };
 
 // ── Resources Page ────────────────────────────────────────────────────────────
@@ -585,7 +586,7 @@ export default function App() {
       {page === "home"      && <HomePage setPage={setPage} />}
       {page === "map"       && <MapPage sharedRawData={sharedRawData} startLocation={startLocation} setStartLocation={setStartLocation} onNewRawData={handleNewRawData} />}
       {page === "resources" && <ResourcesPage />}
-      {page === "about"     && <AboutPage />}
+      {page === "about"     && <AboutPage isDark={isDark} />}
     </div>
   );
 }
