@@ -538,10 +538,33 @@ export default function App() {
   const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/guess-location")
-      .then(res => res.json())
-      .then(data => { if (data?.location) setStartLocation(data.location); })
-      .catch(() => {});
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch("http://localhost:8000/location", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: latitude, lon: longitude }),
+          });
+          const data = await res.json();
+          if (data?.location) setStartLocation(data.location);
+        },
+        // user denied permission then it falls back to IP-based
+        () => {
+          fetch("http://localhost:8000/guess-location")
+            .then(res => res.json())
+            .then(data => { if (data?.location) setStartLocation(data.location); })
+            .catch(() => {});
+        }
+      );
+    } else {
+      // if browser doesn't support geolocation it will fall back to
+      fetch("http://localhost:8000/guess-location")
+        .then(res => res.json())
+        .then(data => { if (data?.location) setStartLocation(data.location); })
+        .catch(() => {});
+    }
   }, []);
 
   function toggleTheme() {
