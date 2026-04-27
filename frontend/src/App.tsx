@@ -443,8 +443,7 @@ function AboutPage({ isDark }: { isDark: boolean }) {
   ];
   return (
     <div style={abouts.page}>
-      <div style={{ background: isDark ? "rgba(230,57,70, 0.5)" : "var(--accent)", padding: "40px 48px", marginBottom: 32, marginTop: 100, width: "100%", textAlign: "center" as const }}>
-        <h2 style={{ ...abouts.h2, color: "#fff", margin: 0 }}>Meet the Team</h2>
+      <div style={{ background: isDark ? "linear-gradient(135deg, rgba(203,158,161,0.8) 0%, rgba(230,57,70,0.4) 100%)" : "linear-gradient(135deg, #ffb3b8 0%, #e63946 100%)", padding: "48px 40px", marginTop: 100, marginBottom: 32, width: "100vw", position: "relative", left: "50%", transform: "translateX(-50%)", textAlign: "center" as const }}>        <h2 style={{ ...abouts.h2, color: "#fff", margin: 0 }}>Meet the Team</h2>
       </div>   
       <div style={abouts.grid}>
         {team.map((m) => (
@@ -453,7 +452,7 @@ function AboutPage({ isDark }: { isDark: boolean }) {
             <img
               src={m.photo}
               alt={m.name}
-              style={{ width: 200, height: 200, borderRadius: "50%", objectFit: "cover", marginBottom: 12, marginTop: 100, border: "2px solid var(--border-subtle)" }}
+              style={{ width: 200, height: 200, borderRadius: "50%", objectFit: "cover", marginBottom: 20, marginTop: 40, border: "2px solid var(--border-subtle)" }}
             />
             <div style={abouts.cardTitle}>{m.name}</div>
             <div style={abouts.cardDesc}>{m.role}</div>
@@ -473,13 +472,16 @@ function AboutPage({ isDark }: { isDark: boolean }) {
   );
 }
 const abouts: Record<string, React.CSSProperties> = {
-  page: { width: "100%", padding: 0 },  h2: { fontSize: 28, fontWeight: 800, color: "var(--text-heading)", marginBottom: 16 },
-  h3: { fontSize: 18, fontWeight: 700, color: "var(--text-heading)", marginBottom: 16, textAlign: "center" as const },
+  page: { maxWidth: 870, margin: "0 auto", padding: "0 0 80px" },  h3: { fontSize: 18, fontWeight: 700, color: "var(--text-heading)", marginBottom: 16, textAlign: "center" as const },
   p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 32,  textAlign: "center" as const },
-  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 40, marginTop: 40, padding: "0 40px" },  
+  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 40, marginTop: 5, padding: "0 40px" },  
+  card: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "0px 12px 10px", marginTop: 16, marginBottom: 50, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" as const },  
   techStack: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "20px 24px", textAlign: "center" as const, marginTop: 200, maxWidth: 800, margin: "40px auto 0" },  
+  cardTitle: { fontWeight: 1000, color: "var(--text-heading)", marginBottom: 4, fontSize: 17, fontFamily: "system-ui, -apple-system, sans-serif" },
+  cardDesc: { fontWeight: 600, color: "var(--text-heading)", marginBottom: 4, fontSize: 12, fontFamily: "system-ui, -apple-system, sans-serif", fontStyle: "italic" },
   stackLabel: { fontSize: 11, color: "var(--text-muted)", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase" as const, marginBottom: 16 },
-  tags: { display: "flex", flexWrap: "wrap" as const, gap: 8, justifyContent: "center" },  tag: { background: "var(--bg-tag)", border: "1px solid var(--border-subtle)", borderRadius: 999, padding: "4px 12px", fontSize: 12, color: "var(--text-tag)" },
+  tags: { display: "flex", flexWrap: "wrap" as const, gap: 8, justifyContent: "center" },  
+  tag: { background: "var(--bg-tag)", border: "1px solid var(--border-subtle)", borderRadius: 999, padding: "4px 12px", fontSize: 12, color: "var(--text-tag)" },
 };
 
 // ── Resources Page ────────────────────────────────────────────────────────────
