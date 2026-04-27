@@ -434,16 +434,16 @@ const ms: Record<string, React.CSSProperties> = {
 // ── About Page ────────────────────────────────────────────────────────────────
 function AboutPage({ isDark }: { isDark: boolean }) {
   const team = [
-    { name: "Suining He", role: "Faculty Advisor", photo: "/suining.jpg" },
-    { name: "Magdalena Danielewicz", role: "Computer Science & Analytics", icon: "👩‍💻" },
-    { name: "Manasvi Iyengar", role: "Computer Science & Economics", photo: "/manasvi.jpg" },
-    { name: "Connor Cybart", role: "Computer Science", icon: "👨‍💻" },
-    { name: "Cameron Chrisanthopoulos", role: "Computer Science & Information Assurance", icon: "👨‍💻" },
-    { name: "Ariana Lopez", role: "Data Science & Engineering", icon: "👩‍💻" },
+    { name: "Suining He", role: "Faculty Advisor", subrole: "Associate Professor, School of Computing", photo: "/suining.jpg", photoPosition: "center top" },
+    { name: "Magdalena Danielewicz", role: "Computer Science & Analytics", photo: "/magdalena.jpg", photoPosition: "center top" },
+    { name: "Manasvi Iyengar", role: "Computer Science & Economics", photo: "/manasvi.jpg", photoPosition: "center 50%" },
+    { name: "Connor Cybart", role: "Computer Science", photo: "/connor.jpg", photoPosition: "center top" },
+    { name: "Cameron Chrisanthopoulos", role: "Computer Science & Information Assurance", photo: "/cameron.jpg", photoPosition: "center 20%" },
+    { name: "Ariana Lopez", role: "Data Science & Engineering", photo: "/ariana.jpg", photoPosition: "center top" },
   ];
   return (
     <div style={abouts.page}>
-      <div style={{ background: isDark ? "linear-gradient(135deg, rgba(203,158,161,0.8) 0%, rgba(230,57,70,0.4) 100%)" : "linear-gradient(135deg, #ffb3b8 0%, #e63946 100%)", padding: "48px 40px", marginTop: 100, marginBottom: 32, width: "100vw", position: "relative", left: "50%", transform: "translateX(-50%)", textAlign: "center" as const }}>        <h2 style={{ ...abouts.h2, color: "#fff", margin: 0 }}>Meet the Team</h2>
+      <div style={{ background: isDark ? "linear-gradient(135deg, rgba(203,158,161,0.8) 0%, rgba(230,57,70,0.4) 100%)" : "linear-gradient(135deg, #ffb3b8 0%, #e63946 100%)", padding: "48px 40px", marginTop: 60, marginBottom: 32, width: "100vw", position: "relative", left: "50%", transform: "translateX(-50%)", textAlign: "center" as const }}>        <h2 style={{ ...abouts.h2, color: "#fff", margin: 0 }}>Meet the Team</h2>
       </div>   
       <div style={abouts.grid}>
         {team.map((m) => (
@@ -452,10 +452,10 @@ function AboutPage({ isDark }: { isDark: boolean }) {
             <img
               src={m.photo}
               alt={m.name}
-              style={{ width: 200, height: 200, borderRadius: "50%", objectFit: "cover", marginBottom: 20, marginTop: 40, border: "2px solid var(--border-subtle)" }}
-            />
-            <div style={abouts.cardTitle}>{m.name}</div>
-            <div style={abouts.cardDesc}>{m.role}</div>
+              style={{ width: 200, height: 200, borderRadius: "50%", objectFit: "cover", objectPosition: m.photoPosition, marginBottom: 8, border: "2px solid var(--border-subtle)" }}            />
+          <div style={abouts.cardTitle}>{m.name}</div>
+          <div style={abouts.cardDesc}>{m.role}</div>
+          {m.subrole && <div style={{ ...abouts.cardDesc, color: "var(--text-secondary)", marginBottom: 2 }}>{m.subrole}</div>}
           </div>
         </div>
         ))}
