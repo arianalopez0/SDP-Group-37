@@ -437,8 +437,8 @@ function AboutPage({ isDark }: { isDark: boolean }) {
     { name: "Suining He", role: "Faculty Advisor", subrole: "Associate Professor, School of Computing", photo: "/suining.jpg", photoPosition: "center top" },
     { name: "Magdalena Danielewicz", role: "Computer Science & Analytics", photo: "/magdalena.jpg", photoPosition: "center top" },
     { name: "Manasvi Iyengar", role: "Computer Science & Economics", photo: "/manasvi.jpg", photoPosition: "center 50%" },
-    { name: "Connor Cybart", role: "Computer Science", photo: "/connor.jpg", photoPosition: "center top" },
-    { name: "Cameron Chrisanthopoulos", role: "Computer Science & Information Assurance", photo: "/cameron.jpg", photoPosition: "center 20%" },
+    { name: "Connor Cybart", role: "Computer Science", photo: "/connor.png", photoPosition: "center top" },
+    { name: "Cameron Chrisanthopoulos", role: "Computer Science & Information Assurance", photo: "/cameron.jpg", photoPosition: "center 10%" },
     { name: "Ariana Lopez", role: "Data Science & Engineering", photo: "/ariana.jpg", photoPosition: "center top" },
   ];
   return (
