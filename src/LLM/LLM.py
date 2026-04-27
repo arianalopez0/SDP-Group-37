@@ -51,11 +51,7 @@ def llm_query_orchestration(prompt):
     while attempts<20:
         attempts+=1
         try:
-            response=llm_query([
-                    {"role": "system", "content": prompt},
-                    {"role": "system", "content": f"Here are the previous messages in the conversation:\n{json.dumps(conversation)}"},
-                ],
-                True,0)
+            response=llm_query([{"role": "system", "content": prompt}],True,0)
             response_dict=json.loads(response.lower())
             return response_dict
         except json.decoder.JSONDecodeError: # If JSON could not load response:
@@ -67,7 +63,7 @@ def llm_query_orchestration(prompt):
                 print("Invalid JSON generated in orchestration, trying again")
         except Exception as e:
             print(type(e))
-            print("Invalid JSON generated in orchestration, trying again")
+            print("^ Exception made in orchestration ^")
             break
     # exit if invalid json generated 20 times (shouldn't happen) or other error was detected (most likely connection)
     return None

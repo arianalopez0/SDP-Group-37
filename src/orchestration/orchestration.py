@@ -40,45 +40,50 @@ def interpret_query(query):
     # LLM Prompt for deciding agent necessity. Includes above template
     prompt=f"""
 <role>
-This is part of a chatbot app created to help users get information about natural disasters, emergency preparedness, evacuation, shelters, and disaster routing.
-Your job is to fill in a JSON template meticulously, matching the format EXACTLY, based on a message's required information.
-The data we need is "need_shelter_data" and "need_routing_data".
-To complete these, replace any instances of "NULL" with "True" or "False".
-Do not change any other values besides "NULL" in the response.
-Do not write anything outside of the JSON response, and make sure all opening brackets are closed.
-If the question is unrelated to natural disasters, shelters, directions, or emergencies, all "NULL" values should be changed to "False".
-</role>
-
-<instructions>
-Set "allow_emergency_response" to True only if the message is relevant to:
+This is part of a chatbot app created ONLY to help users with:
 - natural disasters
 - emergency preparedness
 - evacuation
+- shelters
+- emergency routing
+- official emergency safety guidance
+
+Your job is to fill in the JSON template exactly.
+Replace every "NULL" with either "True" or "False".
+Do not output anything except valid JSON.
+</role>
+
+<instructions>
+Set "allow_emergency_response" to True ONLY if the user's message is relevant to:
+- disasters
+- emergency preparedness
+- shelters
 - shelter information
+- evacuation
 - emergency routing/directions
-- emergency safety guidance
+- emergency guidance
+- seeking help in a disaster
 
-Set "allow_emergency_response" to False if the message is:
-- unrelated
-- casual conversation
-- random small talk
-- jokes or nonsense
-- questions outside the app's emergency/disaster purpose
+Otherwise, set "allow_emergency_response" to False.
 
-If "allow_emergency_response" is False, then all other fields must also be False.
-
-Set "need_shelter_data" to True if the user is asking about disaster shelters or shelter services.
-Set "need_routing_data" to True if the user is asking for directions/routes/navigation.
-Set "need_document_data" to True if the user is asking for preparedness or emergency guidance from official documents.
+Set "need_shelter_data" to True if the user asks about shelters or shelter services.
+Set "need_routing_data" to True if the user asks for directions, routes, or navigation.
+Set "need_document_data" to True if the user asks for emergency preparedness or official safety guidance from documents.
 </instructions>
 
 <json_template>
 {json.dumps(json_template)}
 </json_template>
+
+<message>
+{query}
+</message>
 """
         
     #get response from LLM
     response=get_response(prompt)
+    if not response:
+        return [False, False, False, False], None, "No response in orchestration"
     allow_emergency_response=True
     need_shelter_data=False
     need_routing_data=False
@@ -87,21 +92,15 @@ Set "need_document_data" to True if the user is asking for preparedness or emerg
     
     #parse data
     #added document agent to all of this
-    if "response" in response:
+    if "Response" in response:
+        response=response["Response"]
+    elif "response" in response:
         response=response["response"]
     try:
-        allow_emergency_response=response["allow_emergency_response"]
-        need_shelter_data=response["need_shelter_data"]
-        need_routing_data=response["need_routing_data"]
-        need_document_data=response["need_document_data"]
-    except:
-        #LLM did not return proper JSON template
-        return [False, False, False, False], response, "Missing data key(s)."
-    try:
-        allow_emergency_response=allow_emergency_response["value"]
-        need_shelter_data=need_shelter_data["value"]
-        need_routing_data=need_routing_data["value"]
-        need_document_data=need_document_data["value"]
+        allow_emergency_response=response["allow_emergency_response"]["value"]
+        need_shelter_data=response["need_shelter_data"]["value"]
+        need_routing_data=response["need_routing_data"]["value"]
+        need_document_data=response["need_document_data"]["value"]
         if type(allow_emergency_response) is str:
             allow_emergency_response=allow_emergency_response=="true"
         if type(need_shelter_data) is str:
@@ -110,11 +109,17 @@ Set "need_document_data" to True if the user is asking for preparedness or emerg
             need_routing_data=need_routing_data=="true"
         if type(need_document_data) is str:
             need_document_data=need_document_data=="true"
-    except:
-        error="No value key"
+    except Exception as e:
+        print(e)
+        #LLM did not return proper JSON template
+        return [False, False, False, False], response, "Missing data key(s)."
+    
+    if not allow_emergency_response:
+        return [False, False, False, False], response, error
     
     # Ensure that need_shelter_data is true if need_routing_data is also true.
-    return [allow_emergency_response, need_shelter_data or need_routing_data, need_routing_data, need_document_data], response, error
+    need_shelter_data=need_shelter_data or need_routing_data
+    return [allow_emergency_response, need_shelter_data, need_routing_data, need_document_data], response, error
 
 """Testbed for different queries and how the decision-making responds to different prompts/agent necessities"""
 def test_queries():
