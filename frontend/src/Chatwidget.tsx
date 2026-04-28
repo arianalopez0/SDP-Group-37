@@ -36,6 +36,12 @@ interface ChatWidgetProps {
 
 const markerColors = ["#e63946", "#f4a261", "#2a9d8f", "#457b9d", "#8338ec"];
 
+const ChatIcon = ({ size, color }: { size: number; color: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+  </svg>
+);
+
 function getCenter(data: any): Coord | null {
   const src = data?.user_location ?? data?.input_location;
   if (src?.lat == null || src?.lon == null) return null;
@@ -254,8 +260,10 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendMessage(); }
   }
 
-  const userBubbleMax = isMobile ? "85%" : "60%";
-  const asstBubbleMax = isMobile ? "90%" : "75%";
+  const userBubbleMax = isMobile ? "85%" : "75%";
+  const asstBubbleMax = isMobile ? "90%" : "88%";
+
+  const isInitial = messages.length === 1 && messages[0].role === "assistant" && !loading;
 
   return (
     <>
@@ -273,7 +281,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
 
       <div style={styles.panel}>
         <div style={styles.header}>
-          <span style={styles.headerIcon}>⚠</span>
+          <ChatIcon size={28} color="#2a9d8f" />
           <div>
             <div style={styles.headerTitle}>DisasterRoute Assistant</div>
             {!isMobile && <div style={styles.headerSub}>Ask about shelters, routes, flood risk, or emergency preparedness</div>}
@@ -281,36 +289,48 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
         </div>
 
         <div style={styles.messageList}>
-          {messages.map((msg, i) => {
-            if (msg.type === "map") {
-              return (
-                <div key={i} style={styles.assistantWrap}>
-                  <div style={styles.avatar}>⚠</div>
-                  <InlineMap center={(msg as MapMessage).center} shelters={(msg as MapMessage).shelters} />
-                </div>
-              );
-            }
-
-            const textMsg = msg as TextMessage;
-            return (
-              <div key={i} style={textMsg.role === "user" ? styles.userWrap : styles.assistantWrap}>
-                {textMsg.role === "assistant" && <div style={styles.avatar}>⚠</div>}
-                <div style={{
-                  ...(textMsg.role === "user" ? styles.userBubble : styles.assistantBubble),
-                  maxWidth: textMsg.role === "user" ? userBubbleMax : asstBubbleMax,
-                }}>
-                  {textMsg.error
-                    ? <span style={styles.errorText}>{textMsg.error}</span>
-                    : <ReactMarkdown>{textMsg.content}</ReactMarkdown>
-                  }
-                </div>
+          {isInitial ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 20, padding: "60px 20px" }}>
+              <span style={{ fontSize: 64, color: "var(--accent)" }}>⚠</span>
+              <div style={{ fontSize: 30, fontWeight: 700, color: "var(--text-heading)" }}>How can I help you?</div>
+              <div style={{ fontSize: 17, color: "var(--text-muted)", textAlign: "center", maxWidth: 500, lineHeight: 1.6 }}>
+                Ask about nearby shelters, evacuation routes, flood risk, or emergency preparedness.
               </div>
-            );
-          })}
+            </div>
+          ) : (
+            <>
+              {messages.map((msg, i) => {
+                if (msg.type === "map") {
+                  return (
+                    <div key={i} style={styles.assistantWrap}>
+                      <div style={styles.avatar}><ChatIcon size={13} color="#fff" /></div>
+                      <InlineMap center={(msg as MapMessage).center} shelters={(msg as MapMessage).shelters} />
+                    </div>
+                  );
+                }
+
+                const textMsg = msg as TextMessage;
+                return (
+                  <div key={i} style={textMsg.role === "user" ? styles.userWrap : styles.assistantWrap}>
+                    {textMsg.role === "assistant" && <div style={styles.avatar}><ChatIcon size={13} color="#fff" /></div>}
+                    <div style={{
+                      ...(textMsg.role === "user" ? styles.userBubble : styles.assistantBubble),
+                      maxWidth: textMsg.role === "user" ? userBubbleMax : asstBubbleMax,
+                    }}>
+                      {textMsg.error
+                        ? <span style={styles.errorText}>{textMsg.error}</span>
+                        : <ReactMarkdown>{textMsg.content}</ReactMarkdown>
+                      }
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
 
           {loading && (
             <div style={styles.assistantWrap}>
-              <div style={styles.avatar}>⚠</div>
+              <div style={styles.avatar}><ChatIcon size={13} color="#fff" /></div>
               <div style={{ ...styles.assistantBubble, maxWidth: asstBubbleMax }}>
                 <div style={styles.dotsWrap}>
                   <span className="chat-dot" style={{ animationDelay: "0s" }} />
@@ -333,7 +353,7 @@ export default function ChatWidget({ startLocation, onNewRawData }: ChatWidgetPr
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask about shelters or routes..."
-            rows={isMobile ? 1 : 2}
+            rows={isMobile ? 1 : 3}
             style={styles.textarea}
           />
           {loading ? (
@@ -358,19 +378,19 @@ const styles: Record<string, React.CSSProperties> = {
   panel: { display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-page)" },
   header: { display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "var(--bg-nav)", borderBottom: "1px solid var(--border-main)", flexShrink: 0 },
   headerIcon: { fontSize: 20, color: "var(--accent)" },
-  headerTitle: { fontSize: 14, fontWeight: 700, color: "var(--text-heading)" },
-  headerSub: { fontSize: 11, color: "var(--text-muted)" },
-  messageList: { flex: 1, overflowY: "auto", padding: "14px 12px", display: "flex", flexDirection: "column", gap: 12 },
+  headerTitle: { fontSize: 18, fontWeight: 700, color: "var(--text-heading)" },
+  headerSub: { fontSize: 15, color: "var(--text-muted)" },
+  messageList: { flex: 1, overflowY: "auto", padding: "20px 20px", display: "flex", flexDirection: "column", gap: 14 },
   userWrap: { display: "flex", justifyContent: "flex-end", width: "100%" },
   assistantWrap: { display: "flex", alignItems: "flex-start", gap: 6, width: "100%" },
-  avatar: { width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0, marginTop: 2, color: "#fff" },
-  userBubble: { background: "var(--bg-bubble-user)", border: "1px solid var(--border-bubble-user)", borderRadius: "14px 14px 4px 14px", padding: "10px 14px", maxWidth: "60%", fontSize: 13, lineHeight: 1.5, color: "var(--text-user-bubble)" },
-  assistantBubble: { background: "var(--bg-bubble-asst)", border: "1px solid var(--border-bubble-asst)", borderRadius: "14px 14px 14px 4px", padding: "10px 14px", maxWidth: "75%", fontSize: 13, lineHeight: 1.5, color: "var(--text-primary)" },
+  avatar: { width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 },
+  userBubble: { background: "var(--bg-bubble-user)", border: "1px solid var(--border-bubble-user)", borderRadius: "14px 14px 4px 14px", padding: "10px 14px", maxWidth: "60%", fontSize: 15, lineHeight: 1.5, color: "var(--text-user-bubble)" },
+  assistantBubble: { background: "var(--bg-bubble-asst)", border: "1px solid var(--border-bubble-asst)", borderRadius: "14px 14px 14px 4px", padding: "10px 14px", maxWidth: "75%", fontSize: 15, lineHeight: 1.5, color: "var(--text-primary)" },
   errorText: { color: "var(--accent)", fontSize: 12 },
   dotsWrap: { display: "flex", gap: 4, alignItems: "center", padding: "4px 2px" },
-  inputArea: { display: "flex", gap: 6, padding: "8px 10px 6px", borderTop: "1px solid var(--border-main)", background: "var(--bg-nav)", flexShrink: 0 },
-  textarea: { flex: 1, background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "6px 10px", color: "var(--text-primary)", fontSize: 13, resize: "none", outline: "none", lineHeight: 1.5, fontFamily: "inherit" },
-  sendBtn: { background: "var(--accent)", color: "#fff", border: "none", borderRadius: 8, width: 36, fontSize: 16, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
+  inputArea: { display: "flex", gap: 6, padding: "12px 16px 10px", borderTop: "1px solid var(--border-main)", background: "var(--bg-nav)", flexShrink: 0 },
+  textarea: { flex: 1, background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 10, padding: "10px 14px", color: "var(--text-primary)", fontSize: 16, resize: "none", outline: "none", lineHeight: 1.5, fontFamily: "inherit" },
+  sendBtn: { background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, width: 44, fontSize: 18, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
   hint: { padding: "2px 12px 8px", fontSize: 10, color: "var(--text-faint)", background: "var(--bg-nav)" },
   mapBubble: { background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "14px 14px 14px 4px", padding: "10px", maxWidth: "82%", width: "82%" },
   mapLabel: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-map-label)", fontWeight: 600, marginBottom: 8 },

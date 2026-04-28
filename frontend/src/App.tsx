@@ -343,10 +343,9 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData 
             <div style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 10, display: "flex", gap: 8, alignItems: "flex-start" }}>
               <span style={{ fontSize: 16, lineHeight: 1.4 }}>📍</span>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-empty-title)", marginBottom: 4 }}>Get started</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>Ask the assistant about shelters, routes, or flood risk.</div>
-                <div style={{ fontSize: 10, color: "var(--text-faint)", lineHeight: 1.6, marginTop: 3, fontStyle: "italic" }}>Try:</div>
-                <div style={{ fontSize: 10, color: "var(--text-faint)", lineHeight: 1.8, marginTop: 3 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-empty-title)", marginBottom: 4 }}>Get started</div>
+                <div style={{ fontSize: 12, color: "var(--text-faint)", lineHeight: 1.6, marginTop: 3, fontStyle: "italic" }}>Try:</div>
+                <div style={{ fontSize: 12, color: "var(--text-faint)", lineHeight: 1.8, marginTop: 3 }}>
                   <div>· "Find shelters near me"</div>
                   <div>· "Directions to closest shelter"</div>
                 </div>
@@ -420,14 +419,13 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData 
 const ms: Record<string, React.CSSProperties> = {
   page: { display: "flex", position: "fixed", top: 56, left: 0, right: 0, bottom: 0, overflow: "hidden" },
   sidebar: { width: 280, flexShrink: 0, background: "var(--bg-sidebar)", borderRight: "1px solid var(--border-main)", overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 10 },
-  sideTitle: { color: "var(--text-heading)", fontSize: 16, fontWeight: 700, margin: "0 0 4px" },
-  label: { fontSize: 11, color: "var(--text-muted)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" as const },
-  input: { background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "8px 10px", color: "var(--text-primary)", fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" as const },
+  sideTitle: { color: "var(--text-heading)", fontSize: 20, fontWeight: 700, margin: "0 0 4px" },
+  label: { fontSize: 13, color: "var(--text-muted)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" as const },
+  input: { background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 15, outline: "none", width: "100%", boxSizing: "border-box" as const },
   shelterList: { display: "flex", flexDirection: "column", gap: 8 },
   shelterCard: { display: "flex", alignItems: "flex-start", gap: 8, background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "10px" },
-  shelterName: { fontSize: 12, fontWeight: 700, color: "var(--text-primary)", marginBottom: 2 },
-  shelterMeta: { fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 },
-  viewMapBtn: { background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "9px 12px", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", width: "100%", textAlign: "center" as const, marginTop: 4 },
+  shelterName: { fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 2 },
+  shelterMeta: { fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }, viewMapBtn: { background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "9px 12px", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", width: "100%", textAlign: "center" as const, marginTop: 4 },
   emptyState: { padding: "14px 12px", background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 10, marginTop: 4 },
 };
 
