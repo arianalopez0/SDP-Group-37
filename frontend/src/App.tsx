@@ -435,11 +435,11 @@ const ms: Record<string, React.CSSProperties> = {
 function AboutPage({ isDark }: { isDark: boolean }) {
   const team = [
     { name: "Suining He", role: "Faculty Advisor", subrole: "Associate Professor, School of Computing", photo: "/suining.jpg", photoPosition: "center top" },
-    { name: "Magdalena Danielewicz", role: "Computer Science & Analytics", photo: "/magdalena.jpg", photoPosition: "center top" },
+    { name: "Magdalena Danielewicz", role: "Computer Science & Analytics", photo: "/maggie.jpg", photoPosition: "center 50%" },
     { name: "Manasvi Iyengar", role: "Computer Science & Economics", photo: "/manasvi.jpg", photoPosition: "center 50%" },
     { name: "Connor Cybart", role: "Computer Science", photo: "/connor.png", photoPosition: "center top" },
     { name: "Cameron Chrisanthopoulos", role: "Computer Science & Information Assurance", photo: "/cameron.jpg", photoPosition: "center 10%" },
-    { name: "Ariana Lopez", role: "Data Science & Engineering", photo: "/ariana.jpg", photoPosition: "center top" },
+    { name: "Ariana Lopez", role: "Data Science & Engineering", photo: "/ariana.jpg", photoPosition: "center 150%" },
   ];
   return (
     <div style={abouts.page}>
@@ -452,7 +452,7 @@ function AboutPage({ isDark }: { isDark: boolean }) {
             <img
               src={m.photo}
               alt={m.name}
-              style={{ width: 200, height: 200, borderRadius: "50%", objectFit: "cover", objectPosition: m.photoPosition, marginBottom: 8, border: "2px solid var(--border-subtle)" }}            />
+              style={{ width: 200, height: 200, borderRadius: "50%", objectFit: "cover", objectPosition: m.photoPosition, border: "2px solid var(--border-subtle)" }}            />
           <div style={abouts.cardTitle}>{m.name}</div>
           <div style={abouts.cardDesc}>{m.role}</div>
           {m.subrole && <div style={{ ...abouts.cardDesc, color: "var(--text-secondary)", marginBottom: 2 }}>{m.subrole}</div>}
@@ -474,8 +474,8 @@ function AboutPage({ isDark }: { isDark: boolean }) {
 const abouts: Record<string, React.CSSProperties> = {
   page: { maxWidth: 870, margin: "0 auto", padding: "0 0 80px" },  h3: { fontSize: 18, fontWeight: 700, color: "var(--text-heading)", marginBottom: 16, textAlign: "center" as const },
   p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 32,  textAlign: "center" as const },
-  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 40, marginTop: 5, padding: "0 40px" },  
-  card: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "0px 12px 10px", marginTop: 16, marginBottom: 50, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" as const },  
+  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 12, marginBottom: 40, marginTop: 5, padding: "0 40px" },  
+  card: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "12px 8px 12px 12px", marginTop: 16, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" as const },  
   techStack: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "20px 24px", textAlign: "center" as const, marginTop: 200, maxWidth: 800, margin: "40px auto 0" },  
   cardTitle: { fontWeight: 1000, color: "var(--text-heading)", marginBottom: 4, fontSize: 17, fontFamily: "system-ui, -apple-system, sans-serif" },
   cardDesc: { fontWeight: 600, color: "var(--text-heading)", marginBottom: 4, fontSize: 12, fontFamily: "system-ui, -apple-system, sans-serif", fontStyle: "italic" },
