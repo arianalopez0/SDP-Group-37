@@ -46,3 +46,6 @@ frontend/.vite/
 
 # Ignore flood zone shapefiles
 data/hazards/floods/*
+
+# ignore routing cache json
+src/route_cache.json
