@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, useEffect } from "react";
+import { Fragment, useMemo, useState, useEffect, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import ChatWidget from "./Chatwidget";
@@ -305,16 +305,25 @@ const modal: Record<string, React.CSSProperties> = {
 };
 
 // ── Assistance Page ───────────────────────────────────────────────────────────
-function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData }: {
+function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData, onRedetect }: {
   sharedRawData: any;
   startLocation: string;
   setStartLocation: (loc: string) => void;
   onNewRawData: (data: any) => void;
+  onRedetect: () => void;
 }) {
   const shelters = useMemo(() => getShelters(sharedRawData), [sharedRawData]);
   const center = useMemo(() => getCenter(sharedRawData), [sharedRawData]);
   const [showModal, setShowModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [redetecting, setRedetecting] = useState(false);
+
+  async function handleRedetect() {
+    setRedetecting(true);
+    await onRedetect();
+    // small delay so the spinner is visible even on fast responses
+    setTimeout(() => setRedetecting(false), 800);
+  }
 
   return (
     <div className="map-page" style={ms.page}>
@@ -331,13 +340,38 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData 
             style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 18, cursor: "pointer", padding: "4px 6px", display: "none" }}
           >✕</button>
         </div>
+
         <label style={ms.label}>Your Location</label>
-        <input
-          value={startLocation}
-          onChange={(e) => setStartLocation(e.target.value)}
-          style={ms.input}
-          placeholder="Enter your location..."
-        />
+
+        {/* ── Location input + re-detect button ── */}
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <input
+            value={startLocation}
+            onChange={(e) => setStartLocation(e.target.value)}
+            style={{ ...ms.input, flex: 1 }}
+            placeholder="Enter your location..."
+          />
+          <button
+            onClick={handleRedetect}
+            disabled={redetecting}
+            title="Re-detect my location"
+            style={{
+              flexShrink: 0,
+              background: "var(--bg-input)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: 8,
+              color: redetecting ? "var(--text-faint)" : "var(--text-secondary)",
+              fontSize: 16,
+              cursor: redetecting ? "default" : "pointer",
+              padding: "8px 10px",
+              lineHeight: 1,
+              transition: "opacity 0.2s",
+            }}
+          >
+            {redetecting ? "..." : "📍"}
+          </button>
+        </div>
+
         {shelters.length === 0 ? (
           <div style={ms.emptyState}>
             <div style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 10, display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -425,7 +459,8 @@ const ms: Record<string, React.CSSProperties> = {
   shelterList: { display: "flex", flexDirection: "column", gap: 8 },
   shelterCard: { display: "flex", alignItems: "flex-start", gap: 8, background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "10px" },
   shelterName: { fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 2 },
-  shelterMeta: { fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }, viewMapBtn: { background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "9px 12px", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", width: "100%", textAlign: "center" as const, marginTop: 4 },
+  shelterMeta: { fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 },
+  viewMapBtn: { background: "var(--bg-input)", border: "1px solid var(--border-subtle)", borderRadius: 8, padding: "9px 12px", color: "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", width: "100%", textAlign: "center" as const, marginTop: 4 },
   emptyState: { padding: "14px 12px", background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 10, marginTop: 4 },
 };
 
@@ -441,21 +476,23 @@ function AboutPage({ isDark }: { isDark: boolean }) {
   ];
   return (
     <div style={abouts.page}>
-      <div style={{ background: isDark ? "linear-gradient(135deg, rgba(203,158,161,0.8) 0%, rgba(230,57,70,0.4) 100%)" : "linear-gradient(135deg, #ffb3b8 0%, #e63946 100%)", padding: "48px 40px", marginTop: 60, marginBottom: 32, width: "100vw", position: "relative", left: "50%", transform: "translateX(-50%)", textAlign: "center" as const }}>        <h2 style={{ ...abouts.h2, color: "#fff", margin: 0 }}>Meet the Team</h2>
-      </div>   
+      <div style={{ background: isDark ? "linear-gradient(135deg, rgba(203,158,161,0.8) 0%, rgba(230,57,70,0.4) 100%)" : "linear-gradient(135deg, #ffb3b8 0%, #e63946 100%)", padding: "48px 40px", marginTop: 60, marginBottom: 32, width: "100vw", position: "relative", left: "50%", transform: "translateX(-50%)", textAlign: "center" as const }}>
+        <h2 style={{ ...abouts.h2, color: "#fff", margin: 0 }}>Meet the Team</h2>
+      </div>
       <div style={abouts.grid}>
         {team.map((m) => (
-        <div key={m.name} style={abouts.card}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-            <img
-              src={m.photo}
-              alt={m.name}
-              style={{ width: 200, height: 200, borderRadius: "50%", objectFit: "cover", objectPosition: m.photoPosition, border: "2px solid var(--border-subtle)" }}            />
-          <div style={abouts.cardTitle}>{m.name}</div>
-          <div style={abouts.cardDesc}>{m.role}</div>
-          {m.subrole && <div style={{ ...abouts.cardDesc, color: "var(--text-secondary)", marginBottom: 2 }}>{m.subrole}</div>}
+          <div key={m.name} style={abouts.card}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+              <img
+                src={m.photo}
+                alt={m.name}
+                style={{ width: 200, height: 200, borderRadius: "50%", objectFit: "cover", objectPosition: m.photoPosition, border: "2px solid var(--border-subtle)" }}
+              />
+              <div style={abouts.cardTitle}>{m.name}</div>
+              <div style={abouts.cardDesc}>{m.role}</div>
+              {m.subrole && <div style={{ ...abouts.cardDesc, color: "var(--text-secondary)", marginBottom: 2 }}>{m.subrole}</div>}
+            </div>
           </div>
-        </div>
         ))}
       </div>
       <div style={abouts.techStack}>
@@ -470,15 +507,17 @@ function AboutPage({ isDark }: { isDark: boolean }) {
   );
 }
 const abouts: Record<string, React.CSSProperties> = {
-  page: { maxWidth: 870, margin: "0 auto", padding: "0 0 80px" },  h3: { fontSize: 18, fontWeight: 700, color: "var(--text-heading)", marginBottom: 16, textAlign: "center" as const },
-  p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 32,  textAlign: "center" as const },
-  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 12, marginBottom: 40, marginTop: 5, padding: "0 40px" },  
-  card: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "12px 8px 12px 12px", marginTop: 16, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" as const },  
-  techStack: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "20px 24px", textAlign: "center" as const, marginTop: 200, maxWidth: 800, margin: "40px auto 0" },  
+  page: { maxWidth: 870, margin: "0 auto", padding: "0 0 80px" },
+  h2: { fontSize: 28, fontWeight: 800 },
+  h3: { fontSize: 18, fontWeight: 700, color: "var(--text-heading)", marginBottom: 16, textAlign: "center" as const },
+  p: { fontSize: 15, color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 32, textAlign: "center" as const },
+  grid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", columnGap: 12, marginBottom: 40, marginTop: 5, padding: "0 40px" },
+  card: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "12px 8px 12px 12px", marginTop: 16, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" as const },
+  techStack: { background: "var(--bg-card)", border: "1px solid var(--border-main)", borderRadius: 12, padding: "20px 24px", textAlign: "center" as const, maxWidth: 800, margin: "40px auto 0" },
   cardTitle: { fontWeight: 1000, color: "var(--text-heading)", marginBottom: 4, fontSize: 17, fontFamily: "system-ui, -apple-system, sans-serif" },
   cardDesc: { fontWeight: 600, color: "var(--text-heading)", marginBottom: 4, fontSize: 12, fontFamily: "system-ui, -apple-system, sans-serif", fontStyle: "italic" },
   stackLabel: { fontSize: 11, color: "var(--text-muted)", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase" as const, marginBottom: 16 },
-  tags: { display: "flex", flexWrap: "wrap" as const, gap: 8, justifyContent: "center" },  
+  tags: { display: "flex", flexWrap: "wrap" as const, gap: 8, justifyContent: "center" },
   tag: { background: "var(--bg-tag)", border: "1px solid var(--border-subtle)", borderRadius: 999, padding: "4px 12px", fontSize: 12, color: "var(--text-tag)" },
 };
 
@@ -538,35 +577,46 @@ export default function App() {
   const [startLocation, setStartLocation] = useState("Storrs, CT");
   const [isDark, setIsDark] = useState(true);
 
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          const res = await fetch("http://localhost:8000/location", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ lat: latitude, lon: longitude }),
-          });
-          const data = await res.json();
-          if (data?.location) setStartLocation(data.location);
-        },
-        // user denied permission then it falls back to IP-based
-        () => {
-          fetch("http://localhost:8000/guess-location")
-            .then(res => res.json())
-            .then(data => { if (data?.location) setStartLocation(data.location); })
-            .catch(() => {});
-        }
-      );
-    } else {
-      // if browser doesn't support geolocation it will fall back to
-      fetch("http://localhost:8000/guess-location")
-        .then(res => res.json())
-        .then(data => { if (data?.location) setStartLocation(data.location); })
-        .catch(() => {});
-    }
+  // ── Location detection — extracted so it can be called on demand ──
+  const detectLocation = useCallback(() => {
+    return new Promise<void>((resolve) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            try {
+              const { latitude, longitude } = position.coords;
+              const res = await fetch("http://localhost:8000/location", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ lat: latitude, lon: longitude }),
+              });
+              const data = await res.json();
+              if (data?.location) setStartLocation(data.location);
+            } catch {
+              // GPS succeeded but reverse-geocode failed — fall through to IP
+              fallbackToIP().finally(resolve);
+              return;
+            }
+            resolve();
+          },
+          // user denied permission → fall back to IP
+          () => { fallbackToIP().finally(resolve); }
+        );
+      } else {
+        fallbackToIP().finally(resolve);
+      }
+    });
   }, []);
+
+  function fallbackToIP(): Promise<void> {
+    return fetch("http://localhost:8000/guess-location")
+      .then(res => res.json())
+      .then(data => { if (data?.location) setStartLocation(data.location); })
+      .catch(() => {});
+  }
+
+  // Run once on mount
+  useEffect(() => { detectLocation(); }, [detectLocation]);
 
   function toggleTheme() {
     setIsDark(prev => {
@@ -584,7 +634,15 @@ export default function App() {
     <div style={{ minHeight: "100vh", background: "var(--bg-page)", color: "var(--text-primary)", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       <Nav page={page} setPage={setPage} isDark={isDark} toggleTheme={toggleTheme} />
       {page === "home"      && <HomePage setPage={setPage} />}
-      {page === "map"       && <MapPage sharedRawData={sharedRawData} startLocation={startLocation} setStartLocation={setStartLocation} onNewRawData={handleNewRawData} />}
+      {page === "map"       && (
+        <MapPage
+          sharedRawData={sharedRawData}
+          startLocation={startLocation}
+          setStartLocation={setStartLocation}
+          onNewRawData={handleNewRawData}
+          onRedetect={detectLocation}
+        />
+      )}
       {page === "resources" && <ResourcesPage />}
       {page === "about"     && <AboutPage isDark={isDark} />}
     </div>
