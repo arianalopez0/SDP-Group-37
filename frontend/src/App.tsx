@@ -1,41 +1,140 @@
+/**
+ * App.tsx — Root application component for DisasterRoute CT
+ *
+ * Owns:
+ *  - Top-level page routing (home | map | resources | about)
+ *  - Light/dark theme toggle (CSS class on <html>)
+ *  - User location detection (GPS → reverse-geocode → IP fallback)
+ *  - Shared raw backend data that flows from ChatWidget down to MapPage sidebar
+ *
+ * Page breakdown:
+ *  - HomePage     : Landing page with feature cards and CTA
+ *  - MapPage      : Main assistance view — sidebar + ChatWidget + full-map modal
+ *  - ResourcesPage: Curated CT emergency resource links
+ *  - AboutPage    : Team bios and tech stack
+ */
+
 import { Fragment, useMemo, useState, useEffect, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import ChatWidget from "./Chatwidget";
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+/** The four top-level routes rendered by App. */
 type Page = "home" | "map" | "resources" | "about";
 
+/** [latitude, longitude] tuple used throughout Leaflet components. */
+type Coord = [number, number];
+
+/**
+ * A single emergency shelter as used by the frontend.
+ * Normalised from two possible backend shapes by getShelters().
+ */
 interface Shelter {
-  name: string; address: string; city: string; state: string; zip: string;
-  status: string; lat: number; lon: number;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  status: string;        // "OPEN" | "CLOSED" | etc.
+  lat: number;
+  lon: number;
   straightline_distance_miles?: number | null;
-  handicap_accessible?: string | null;
-  route?: any;
+  handicap_accessible?: string | null; // "Yes" | "No" | null
+  route?: any;           // Routing agent payload — see getRoute()
   flood_warnings?: { zone: string; risk: string; description?: string | null }[] | null;
 }
 
+// ── Data helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * Normalise shelter data from two different backend response shapes:
+ *
+ *  Shape A — orchestration / "closest shelters" path:
+ *    { nearest_shelters: [{ lat, lon, name, ... }] }
+ *
+ *  Shape B — routing agent path:
+ *    { shelters: [{ location: { lat, lon }, name, ... }] }
+ *
+ * Returns an empty array if data is null/undefined or neither shape matches.
+ */
 function getShelters(data: any): Shelter[] {
   if (!data) return [];
+
+  // Shape A — flat lat/lon on each shelter object
   if (Array.isArray(data.nearest_shelters)) {
     return data.nearest_shelters.filter((s: any) => s.lat != null && s.lon != null);
   }
+
+  // Shape B — lat/lon nested under shelter.location
   if (Array.isArray(data.shelters)) {
     return data.shelters
       .filter((s: any) => s.location?.lat != null && s.location?.lon != null)
       .map((s: any) => ({
-        name: s.name, address: s.address, city: s.city,
-        state: s.state, zip: s.zip, status: s.status,
-        lat: s.location.lat, lon: s.location.lon,
+        name: s.name,
+        address: s.address,
+        city: s.city,
+        state: s.state,
+        zip: s.zip,
+        status: s.status,
+        lat: s.location.lat,
+        lon: s.location.lon,
         straightline_distance_miles: s.straightline_distance_miles ?? null,
         handicap_accessible: s.handicap_accessible ?? null,
         route: s.route ?? null,
         flood_warnings: s.flood_warnings ?? null,
       }));
   }
+
   return [];
 }
 
+/**
+ * Extract the user's coordinates from the backend response.
+ * The backend may return the location under either key depending on the agent:
+ *  - user_location  (orchestration agent)
+ *  - input_location (routing agent)
+ * Returns null if neither key is present or lacks valid lat/lon.
+ */
+function getCenter(data: any): Coord | null {
+  const src = data?.user_location ?? data?.input_location;
+  if (src?.lat == null || src?.lon == null) return null;
+  return [src.lat, src.lon];
+}
+
+/**
+ * Build a Leaflet polyline path for a shelter's evacuation route.
+ *
+ * The routing agent returns path_coordinates as an array of [lat, lon] pairs
+ * inside shelter.route. We prepend the user's position so the line starts
+ * from their location.
+ *
+ * NOTE: An earlier bug sent a coordinate *count* integer instead of the array;
+ * the Array.isArray guard below protects against that regression.
+ *
+ * Returns null if no valid route data is present.
+ */
+function getRoute(shelter: Shelter, userCoord?: Coord): Coord[] | null {
+  const coords = shelter.route?.path_coordinates;
+  if (!Array.isArray(coords) || coords.length === 0) return null;
+
+  const pts = coords
+    .filter((c: any) => Array.isArray(c) && c.length === 2)
+    .map((c: any) => [c[0], c[1]] as Coord);
+
+  return userCoord ? [userCoord, ...pts] : pts;
+}
+
+// ── Shared marker colours (one per shelter, cycling) ─────────────────────────
+const markerColors = ["#e63946", "#f4a261", "#2a9d8f", "#457b9d", "#8338ec"];
+
 // ── Nav ───────────────────────────────────────────────────────────────────────
+
+/**
+ * Top navigation bar.
+ * Renders desktop links + hamburger menu (mobile) and the light/dark toggle.
+ */
 function Nav({ page, setPage, isDark, toggleTheme }: {
   page: Page;
   setPage: (p: Page) => void;
@@ -44,6 +143,7 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
+  /** Navigate to a page and close the mobile menu if open. */
   function navigate(p: Page) {
     setPage(p);
     setMenuOpen(false);
@@ -57,6 +157,7 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
           <span style={ns.brandName}>DisasterRoute CT</span>
         </div>
         <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          {/* Desktop nav links — hidden on mobile via CSS */}
           <div className="desktop-nav-links" style={{ display: "flex", gap: 4, alignItems: "center" }}>
             {(["home", "map", "resources", "about"] as Page[]).map((p) => (
               <button key={p} onClick={() => navigate(p)}
@@ -66,7 +167,7 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
             ))}
           </div>
 
-          {/* Theme toggle */}
+          {/* Light / dark theme toggle pill */}
           <div
             onClick={toggleTheme}
             title="Toggle theme"
@@ -82,6 +183,7 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
               transition: "background 0.2s",
             }}
           >
+            {/* Sliding knob */}
             <div style={{
               position: "absolute",
               top: 3,
@@ -92,6 +194,7 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
               borderRadius: "50%",
               transition: "left 0.2s, right 0.2s",
             }} />
+            {/* Label: shows "☀ Dark" in dark mode, "🌙 Light" in light mode */}
             <span style={{
               position: "absolute",
               top: "50%",
@@ -110,6 +213,7 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
             </span>
           </div>
 
+          {/* Hamburger — visible on mobile only (CSS toggles display) */}
           <button
             className="hamburger-btn"
             onClick={() => setMenuOpen(o => !o)}
@@ -119,6 +223,8 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
           </button>
         </div>
       </nav>
+
+      {/* Mobile dropdown — rendered below nav bar when hamburger is open */}
       <div className={`mobile-nav-menu${menuOpen ? " open" : ""}`}>
         {(["home", "map", "resources", "about"] as Page[]).map((p) => (
           <button key={p} onClick={() => navigate(p)}
@@ -130,6 +236,8 @@ function Nav({ page, setPage, isDark, toggleTheme }: {
     </>
   );
 }
+
+/** Nav style tokens */
 const ns: Record<string, React.CSSProperties> = {
   nav: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: 56, background: "var(--bg-nav)", borderBottom: "1px solid var(--border-main)", position: "sticky", top: 0, zIndex: 1000 },
   brand: { display: "flex", alignItems: "center", gap: 8 },
@@ -139,6 +247,11 @@ const ns: Record<string, React.CSSProperties> = {
 };
 
 // ── Home Page ─────────────────────────────────────────────────────────────────
+
+/**
+ * Landing page shown on first load.
+ * Features a hero section with CTA and a grid of feature cards.
+ */
 function HomePage({ setPage }: { setPage: (p: Page) => void }) {
   return (
     <div style={hs.page}>
@@ -148,6 +261,8 @@ function HomePage({ setPage }: { setPage: (p: Page) => void }) {
         <p style={hs.sub}>DisasterRoute CT uses real-time data and AI to guide Connecticut residents to the nearest open shelters during emergencies.</p>
         <button onClick={() => setPage("map")} style={hs.cta}>Get Assistance →</button>
       </div>
+
+      {/* Feature cards grid — responsive via CSS media query */}
       <div className="home-cards" style={hs.cards}>
         {[
           {
@@ -183,12 +298,16 @@ function HomePage({ setPage }: { setPage: (p: Page) => void }) {
           </div>
         ))}
       </div>
+
+      {/* Disclaimer banner */}
       <div style={hs.notice}>
         <strong>⚠ This tool is for demonstration and research purposes.</strong> Always follow official emergency broadcasts and local authority guidance during a real disaster.
       </div>
     </div>
   );
 }
+
+/** Home page style tokens */
 const hs: Record<string, React.CSSProperties> = {
   page: { maxWidth: 1100, margin: "0 auto", padding: "48px 20px 80px" },
   hero: { textAlign: "center", padding: "48px 0 40px" },
@@ -203,24 +322,19 @@ const hs: Record<string, React.CSSProperties> = {
   notice: { background: "rgba(230,57,70,0.07)", border: "1px solid rgba(230,57,70,0.2)", borderRadius: 10, padding: "16px 20px", fontSize: 13, color: "var(--text-notice)", lineHeight: 1.6, textAlign: "center" as const },
 };
 
-type Coord = [number, number];
-const markerColors = ["#e63946", "#f4a261", "#2a9d8f", "#457b9d", "#8338ec"];
-
-function getCenter(data: any): Coord | null {
-  const src = data?.user_location ?? data?.input_location;
-  if (src?.lat == null || src?.lon == null) return null;
-  return [src.lat, src.lon];
-}
-
-function getRoute(shelter: Shelter, userCoord?: Coord): Coord[] | null {
-  const coords = shelter.route?.path_coordinates;
-  if (!Array.isArray(coords) || coords.length === 0) return null;
-  const pts = coords.filter((c: any) => Array.isArray(c) && c.length === 2).map((c: any) => [c[0], c[1]] as Coord);
-  return userCoord ? [userCoord, ...pts] : pts;
-}
-
 // ── Full Map Modal ────────────────────────────────────────────────────────────
-function FullMapModal({ center, shelters, onClose }: { center: Coord; shelters: Shelter[]; onClose: () => void }) {
+
+/**
+ * Full-screen map modal triggered from the sidebar "View Full Map" button.
+ * Renders all shelters with numbered markers and optional route polylines.
+ * Closes on Escape key or clicking the overlay.
+ */
+function FullMapModal({ center, shelters, onClose }: {
+  center: Coord;
+  shelters: Shelter[];
+  onClose: () => void;
+}) {
+  // Close on Escape key
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
@@ -228,15 +342,21 @@ function FullMapModal({ center, shelters, onClose }: { center: Coord; shelters: 
   }, [onClose]);
 
   return (
+    // Overlay — clicking backdrop closes modal
     <div className="full-map-modal-overlay" style={modal.overlay} onClick={onClose}>
+      {/* Sheet — stopPropagation prevents clicks inside from closing */}
       <div className="full-map-modal-sheet" style={modal.sheet} onClick={(e) => e.stopPropagation()}>
         <div style={modal.header}>
           <span style={{ color: "var(--accent)", fontSize: 16 }}>🗺</span>
           <span style={modal.title}>Shelter Map</span>
-          <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 4 }}>{shelters.length} shelter{shelters.length !== 1 ? "s" : ""} found</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 4 }}>
+            {shelters.length} shelter{shelters.length !== 1 ? "s" : ""} found
+          </span>
           <button onClick={onClose} style={modal.closeBtn}>✕</button>
         </div>
+
         <div style={modal.mapWrap}>
+          {/* Leaflet theme overrides scoped to this modal */}
           <style>{`
             .modal-map .leaflet-container { background: #e8e0d8 !important; }
             .modal-map .leaflet-control-attribution { font-size: 9px !important; opacity: 0.4 !important; }
@@ -249,6 +369,8 @@ function FullMapModal({ center, shelters, onClose }: { center: Coord; shelters: 
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                 attribution='&copy; <a href="https://carto.com/">CARTO</a>'
               />
+
+              {/* Blue pulsing dot for the user's position */}
               <Marker position={center} icon={L.divIcon({
                 className: "",
                 html: `<div style="background:#1a86e8;border:3px solid #fff;border-radius:50%;width:16px;height:16px;box-shadow:0 0 0 3px rgba(26,134,232,0.4)"></div>`,
@@ -256,12 +378,15 @@ function FullMapModal({ center, shelters, onClose }: { center: Coord; shelters: 
               })}>
                 <Popup><strong>📍 You are here</strong></Popup>
               </Marker>
+
+              {/* Shelter markers + route polylines */}
               {shelters.map((s, idx) => {
                 const pos: Coord = [s.lat, s.lon];
                 const route = getRoute(s, center);
                 const color = markerColors[idx % markerColors.length];
                 return (
                   <Fragment key={idx}>
+                    {/* Teardrop marker with shelter index number */}
                     <Marker position={pos} icon={L.divIcon({
                       className: "",
                       html: `<div style="background:${color};border:2px solid #fff;border-radius:50% 50% 50% 0;width:18px;height:18px;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,0.4)"><span style="transform:rotate(45deg);display:block;text-align:center;font-size:9px;line-height:18px;color:#fff;font-weight:700">${idx + 1}</span></div>`,
@@ -279,9 +404,12 @@ function FullMapModal({ center, shelters, onClose }: { center: Coord; shelters: 
                         <span style={{ fontSize: 11 }}><strong>#{idx + 1}</strong> {s.name} · {s.straightline_distance_miles} mi</span>
                       </Tooltip>
                     </Marker>
+
+                    {/* Route polyline — thicker and solid for the closest shelter (#0) */}
                     {route && (
                       <Polyline positions={route} color={color}
-                        weight={idx === 0 ? 5 : 3} opacity={idx === 0 ? 0.95 : 0.55}
+                        weight={idx === 0 ? 5 : 3}
+                        opacity={idx === 0 ? 0.95 : 0.55}
                         dashArray={idx === 0 ? undefined : "8 6"} />
                     )}
                   </Fragment>
@@ -295,6 +423,7 @@ function FullMapModal({ center, shelters, onClose }: { center: Coord; shelters: 
   );
 }
 
+/** Full-map modal style tokens */
 const modal: Record<string, React.CSSProperties> = {
   overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 },
   sheet: { background: "var(--bg-nav)", border: "1px solid var(--border-subtle)", borderRadius: 14, width: "100%", maxWidth: 900, height: "80vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 24px 64px var(--shadow-modal)" },
@@ -304,7 +433,25 @@ const modal: Record<string, React.CSSProperties> = {
   mapWrap: { flex: 1, overflow: "hidden" },
 };
 
-// ── Assistance Page ───────────────────────────────────────────────────────────
+// ── Assistance (Map) Page ─────────────────────────────────────────────────────
+
+/**
+ * The primary tool page.
+ *
+ * Layout:
+ *  ┌─────────────┬──────────────────────────────┐
+ *  │  Sidebar    │        ChatWidget             │
+ *  │  (280px)    │  (full height, flex 1)        │
+ *  │  Shelters   │                               │
+ *  └─────────────┴──────────────────────────────┘
+ *
+ * Data flow:
+ *  1. User types a query in ChatWidget
+ *  2. ChatWidget POSTs to /run-query and receives raw_data in the response
+ *  3. ChatWidget calls onNewRawData(raw_data) → App.sharedRawData updates
+ *  4. MapPage re-derives shelters + center from the new sharedRawData
+ *  5. Sidebar renders shelter cards; "View Full Map" opens FullMapModal
+ */
 function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData, onRedetect }: {
   sharedRawData: any;
   startLocation: string;
@@ -312,28 +459,39 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData,
   onNewRawData: (data: any) => void;
   onRedetect: () => void;
 }) {
+  // Derived shelter list and map centre — recomputed only when raw data changes
   const shelters = useMemo(() => getShelters(sharedRawData), [sharedRawData]);
-  const center = useMemo(() => getCenter(sharedRawData), [sharedRawData]);
-  const [showModal, setShowModal] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [redetecting, setRedetecting] = useState(false);
+  const center   = useMemo(() => getCenter(sharedRawData),   [sharedRawData]);
 
+  const [showModal,    setShowModal]    = useState(false);
+  const [sidebarOpen,  setSidebarOpen]  = useState(false); // mobile drawer
+  const [redetecting,  setRedetecting]  = useState(false); // spinner state
+
+  /**
+   * Re-run location detection and show a brief spinner.
+   * The 800 ms delay keeps the UI responsive even on instant responses.
+   */
   async function handleRedetect() {
     setRedetecting(true);
     await onRedetect();
-    // small delay so the spinner is visible even on fast responses
     setTimeout(() => setRedetecting(false), 800);
   }
 
   return (
     <div className="map-page" style={ms.page}>
+      {/* Full-map modal — only mounted when showModal=true and a centre exists */}
       {showModal && center && (
         <FullMapModal center={center} shelters={shelters} onClose={() => setShowModal(false)} />
       )}
+
+      {/* Mobile sidebar overlay (semi-transparent backdrop) */}
       <div className={`sidebar-overlay${sidebarOpen ? " open" : ""}`} onClick={() => setSidebarOpen(false)} />
+
+      {/* ── Sidebar ── */}
       <div className={`sidebar-drawer${sidebarOpen ? " open" : ""}`} style={ms.sidebar}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
           <h2 style={ms.sideTitle}>Nearby Shelters</h2>
+          {/* Close button — visible on mobile only */}
           <button
             className="sidebar-close-btn"
             onClick={() => setSidebarOpen(false)}
@@ -343,7 +501,7 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData,
 
         <label style={ms.label}>Your Location</label>
 
-        {/* ── Location input + re-detect button ── */}
+        {/* Location input + re-detect button */}
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <input
             value={startLocation}
@@ -351,6 +509,7 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData,
             style={{ ...ms.input, flex: 1 }}
             placeholder="Enter your location..."
           />
+          {/* 📍 button triggers GPS/IP re-detection */}
           <button
             onClick={handleRedetect}
             disabled={redetecting}
@@ -372,6 +531,7 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData,
           </button>
         </div>
 
+        {/* Empty state — shown before any backend query has been made */}
         {shelters.length === 0 ? (
           <div style={ms.emptyState}>
             <div style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 10, display: "flex", gap: 8, alignItems: "flex-start" }}>
@@ -388,9 +548,11 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData,
           </div>
         ) : (
           <>
+            {/* Shelter card list */}
             <div style={ms.shelterList}>
               {shelters.map((s, i) => (
                 <div key={i} style={ms.shelterCard}>
+                  {/* Colour dot matching the map marker */}
                   <div style={{ width: 10, height: 10, borderRadius: "50%", flexShrink: 0, marginTop: 3, background: markerColors[i % markerColors.length] }} />
                   <div>
                     <div style={ms.shelterName}>{s.name}</div>
@@ -404,6 +566,7 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData,
                         {s.handicap_accessible === "Yes" ? "✓ Wheelchair accessible" : "✗ Not accessible"}
                       </div>
                     )}
+                    {/* Flood warning badge — colour-coded by risk level */}
                     {s.flood_warnings && s.flood_warnings.length > 0 && (
                       <div style={{ ...ms.shelterMeta, color: s.flood_warnings[0].risk === "High" ? "#e63946" : s.flood_warnings[0].risk === "Moderate" ? "#f4a261" : "#7a7f94" }}>
                         ⚠ Flood zone: {s.flood_warnings[0].risk} ({s.flood_warnings[0].zone})
@@ -413,6 +576,8 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData,
                 </div>
               ))}
             </div>
+
+            {/* "View Full Map" button — only shown when a centre coordinate exists */}
             {center && (
               <button onClick={() => { setShowModal(true); setSidebarOpen(false); }} style={ms.viewMapBtn}>
                 🗺 View Full Map
@@ -421,12 +586,15 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData,
           </>
         )}
       </div>
+
+      {/* ── Chat panel ── */}
       <div className="chat-panel-wrap" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+        {/* Mobile sidebar toggle — floats over the chat panel */}
         <button
           className="sidebar-toggle-btn"
           onClick={() => setSidebarOpen(o => !o)}
           style={{
-            display: "none",
+            display: "none", // shown via CSS on mobile
             position: "absolute",
             top: 12, right: 12,
             zIndex: 10,
@@ -444,12 +612,15 @@ function MapPage({ sharedRawData, startLocation, setStartLocation, onNewRawData,
         >
           ☰ Shelters
         </button>
+
+        {/* ChatWidget sends queries to the backend and surfaces raw_data upward */}
         <ChatWidget startLocation={startLocation} onNewRawData={onNewRawData} />
       </div>
     </div>
   );
 }
 
+/** MapPage / sidebar style tokens */
 const ms: Record<string, React.CSSProperties> = {
   page: { display: "flex", position: "fixed", top: 56, left: 0, right: 0, bottom: 0, overflow: "hidden" },
   sidebar: { width: 280, flexShrink: 0, background: "var(--bg-sidebar)", borderRight: "1px solid var(--border-main)", overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 10 },
@@ -465,20 +636,29 @@ const ms: Record<string, React.CSSProperties> = {
 };
 
 // ── About Page ────────────────────────────────────────────────────────────────
+
+/**
+ * Team bios and tech stack.
+ * Photos are served from /public — see vite.config for the static asset path.
+ */
 function AboutPage({ isDark }: { isDark: boolean }) {
   const team = [
-    { name: "Suining He", role: "Faculty Advisor", subrole: "Associate Professor, School of Computing", photo: "/suining.jpg", photoPosition: "center top" },
-    { name: "Magdalena Danielewicz", role: "Computer Science & Analytics", photo: "/maggie.jpg", photoPosition: "center 50%" },
-    { name: "Manasvi Iyengar", role: "Computer Science & Economics", photo: "/manasvi.jpg", photoPosition: "center 50%" },
-    { name: "Connor Cybart", role: "Computer Science", photo: "/connor.png", photoPosition: "center top" },
-    { name: "Cameron Chrisanthopoulos", role: "Computer Science & Information Assurance", photo: "/cameron.jpg", photoPosition: "center 10%" },
-    { name: "Ariana Lopez", role: "Data Science & Engineering", photo: "/ariana.jpg", photoPosition: "center 150%" },
+    { name: "Suining He",                role: "Faculty Advisor",                       subrole: "Associate Professor, School of Computing", photo: "/suining.jpg",  photoPosition: "center top"  },
+    { name: "Magdalena Danielewicz",      role: "Computer Science & Analytics",          photo: "/maggie.jpg",   photoPosition: "center 50%"  },
+    { name: "Manasvi Iyengar",            role: "Computer Science & Economics",          photo: "/manasvi.jpg",  photoPosition: "center 50%"  },
+    { name: "Connor Cybart",              role: "Computer Science",                      photo: "/connor.png",   photoPosition: "center top"  },
+    { name: "Cameron Chrisanthopoulos",   role: "Computer Science & Information Assurance", photo: "/cameron.jpg", photoPosition: "center 10%" },
+    { name: "Ariana Lopez",               role: "Data Science & Engineering",            photo: "/ariana.jpg",   photoPosition: "center 150%" },
   ];
+
   return (
     <div style={abouts.page}>
+      {/* Full-bleed gradient banner */}
       <div style={{ background: isDark ? "linear-gradient(135deg, rgba(203,158,161,0.8) 0%, rgba(230,57,70,0.4) 100%)" : "linear-gradient(135deg, #ffb3b8 0%, #e63946 100%)", padding: "48px 40px", marginTop: 60, marginBottom: 32, width: "100vw", position: "relative", left: "50%", transform: "translateX(-50%)", textAlign: "center" as const }}>
         <h2 style={{ ...abouts.h2, color: "#fff", margin: 0 }}>Meet the Team</h2>
       </div>
+
+      {/* Team member grid */}
       <div style={abouts.grid}>
         {team.map((m) => (
           <div key={m.name} style={abouts.card}>
@@ -495,6 +675,8 @@ function AboutPage({ isDark }: { isDark: boolean }) {
           </div>
         ))}
       </div>
+
+      {/* Tech stack tag cloud */}
       <div style={abouts.techStack}>
         <div style={abouts.stackLabel}>Tech Stack</div>
         <div style={abouts.tags}>
@@ -506,6 +688,8 @@ function AboutPage({ isDark }: { isDark: boolean }) {
     </div>
   );
 }
+
+/** About page style tokens */
 const abouts: Record<string, React.CSSProperties> = {
   page: { maxWidth: 870, margin: "0 auto", padding: "0 0 80px" },
   h2: { fontSize: 28, fontWeight: 800 },
@@ -522,19 +706,29 @@ const abouts: Record<string, React.CSSProperties> = {
 };
 
 // ── Resources Page ────────────────────────────────────────────────────────────
+
+/**
+ * Curated list of official Connecticut emergency preparedness resources.
+ * Fetches favicons from Google's favicon service for visual polish.
+ */
 function ResourcesPage() {
+  /** Strip www. and return just the hostname for display. */
   function getDomain(url: string) {
     try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
   }
+
+  /** Build a Google favicon URL for a given page URL. */
   function getFaviconUrl(url: string) {
     return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(getDomain(url))}&sz=64`;
   }
+
   const resources: { title: string; url: string; note?: string }[] = [
-    { title: "DESPP Resources for Individuals", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/resources-for-individuals", note: "Official CT DEMHS hub for individual and family emergency preparedness, covering hazard preparedness tips, mitigation advice for homeowners, volunteering opportunities, accessibility resources, and links to the CT Ready personal preparedness guide." },
+    { title: "DESPP Resources for Individuals",          url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/resources-for-individuals",          note: "Official CT DEMHS hub for individual and family emergency preparedness, covering hazard preparedness tips, mitigation advice for homeowners, volunteering opportunities, accessibility resources, and links to the CT Ready personal preparedness guide." },
     { title: "Know Your Zone! Shoreline Evacuation Maps", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/summer-weather-awareness/know-your-zone-evacuation-maps?language=en_US", note: "Official CT DEMHS shoreline evacuation maps for Connecticut's coastal areas." },
-    { title: "CT Ready! Personal Preparedness Guide", url: "https://portal.ct.gov/dph/-/media/departments-and-agencies/dph/public-health-preparedness/prep-guide-2020/english-ct-ready-guide.pdf?rev=9854487064f140e083d6332de56c1c1c&hash=6AE2BF813546AA015A0965E20E446219", note: "Official CT Department of Public Health CT Ready! Personal Preparedness Guide." },
-    { title: "DESPP Staying Informed", url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/staying-informed?language=en_US", note: "Official CT DEMHS hub for staying informed about emergency preparedness and disaster information." },
+    { title: "CT Ready! Personal Preparedness Guide",    url: "https://portal.ct.gov/dph/-/media/departments-and-agencies/dph/public-health-preparedness/prep-guide-2020/english-ct-ready-guide.pdf?rev=9854487064f140e083d6332de56c1c1c&hash=6AE2BF813546AA015A0965E20E446219", note: "Official CT Department of Public Health CT Ready! Personal Preparedness Guide." },
+    { title: "DESPP Staying Informed",                   url: "https://portal.ct.gov/demhs/emergency-management/resources-for-individuals/staying-informed?language=en_US",     note: "Official CT DEMHS hub for staying informed about emergency preparedness and disaster information." },
   ];
+
   return (
     <div style={resourcesS.page}>
       <h2 style={resourcesS.h2}>Connecticut Resources</h2>
@@ -557,6 +751,8 @@ function ResourcesPage() {
     </div>
   );
 }
+
+/** Resources page style tokens */
 const resourcesS: Record<string, React.CSSProperties> = {
   page: { maxWidth: 820, margin: "0 auto", padding: "48px 20px 80px" },
   h2: { fontSize: 28, fontWeight: 800, color: "var(--text-heading)", marginBottom: 16 },
@@ -571,13 +767,31 @@ const resourcesS: Record<string, React.CSSProperties> = {
 };
 
 // ── Root App ──────────────────────────────────────────────────────────────────
-export default function App() {
-  const [page, setPage] = useState<Page>("home");
-  const [sharedRawData, setSharedRawData] = useState<any>(null);
-  const [startLocation, setStartLocation] = useState("Storrs, CT");
-  const [isDark, setIsDark] = useState(true);
 
-  // ── Location detection — extracted so it can be called on demand ──
+/**
+ * Root component. Manages:
+ *  - Page state (routing)
+ *  - Theme (dark/light via CSS class on <html>)
+ *  - Location detection (GPS → reverse-geocode → IP fallback)
+ *  - Shared raw backend data lifted from ChatWidget for the sidebar
+ */
+export default function App() {
+  const [page,           setPage]          = useState<Page>("home");
+  const [sharedRawData,  setSharedRawData] = useState<any>(null);
+  const [startLocation,  setStartLocation] = useState("Storrs, CT"); // default fallback
+  const [isDark,         setIsDark]        = useState(true);
+
+  /**
+   * Attempt to determine the user's location using a two-step fallback:
+   *
+   *  1. Browser Geolocation API (GPS / Wi-Fi)
+   *     → POST /location with {lat, lon} for reverse-geocoding to a city string
+   *  2. IP-based geolocation via GET /guess-location
+   *     (used when GPS is unavailable or the user denies permission)
+   *
+   * Wrapped in useCallback so it can be passed as a stable ref to MapPage's
+   * "re-detect" button without causing infinite re-renders.
+   */
   const detectLocation = useCallback(() => {
     return new Promise<void>((resolve) => {
       if (navigator.geolocation) {
@@ -591,6 +805,7 @@ export default function App() {
                 body: JSON.stringify({ lat: latitude, lon: longitude }),
               });
               const data = await res.json();
+              // Backend returns { location: "City, ST" }
               if (data?.location) setStartLocation(data.location);
             } catch {
               // GPS succeeded but reverse-geocode failed — fall through to IP
@@ -599,25 +814,36 @@ export default function App() {
             }
             resolve();
           },
-          // user denied permission → fall back to IP
+          // User denied GPS permission → fall back to IP
           () => { fallbackToIP().finally(resolve); }
         );
       } else {
+        // Browser doesn't support geolocation
         fallbackToIP().finally(resolve);
       }
     });
   }, []);
 
+  /**
+   * IP-based location fallback via the backend's /guess-location endpoint.
+   * Uses the `geocoder` library server-side.
+   * The response field is `location` (not `city` or `region`).
+   */
   function fallbackToIP(): Promise<void> {
     return fetch("http://localhost:8000/guess-location")
       .then(res => res.json())
       .then(data => { if (data?.location) setStartLocation(data.location); })
-      .catch(() => {});
+      .catch(() => {}); // silently ignore — default "Storrs, CT" stays
   }
 
-  // Run once on mount
+  // Run location detection once on mount
   useEffect(() => { detectLocation(); }, [detectLocation]);
 
+  /**
+   * Toggle between dark and light themes.
+   * Adds/removes the "light" class on <html>; CSS variables in index.css
+   * handle the actual colour switching under :root.light { ... }.
+   */
   function toggleTheme() {
     setIsDark(prev => {
       const next = !prev;
@@ -626,6 +852,10 @@ export default function App() {
     });
   }
 
+  /**
+   * Receives raw backend data from ChatWidget and lifts it to App state
+   * so MapPage's sidebar can display the shelter cards.
+   */
   function handleNewRawData(data: any) {
     setSharedRawData(data);
   }
