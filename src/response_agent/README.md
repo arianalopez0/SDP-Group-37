@@ -9,6 +9,11 @@ The Response Agent ONLY takes the JSON computed by the Orchestration Agent and s
 
 {
   "query": "...",
-  "shelter_results": { ... },
-  "routing_results": { ... }
+  "user_location": { ... },
+  "shelters": { 
+    ... ,
+    ... ,
+    "route": { ... }
+  },
+  "document_context": { ... }
 }
