@@ -14,7 +14,8 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -85,19 +86,3 @@ async def run_query(req: QueryRequest):
     except Exception as e:
         traceback.print_exc()
         return {"error": str(e)}
-    
-class Coords(BaseModel):
-    lat: float
-    lon: float
-
-@app.post("/location")
-async def resolve_location(coords: Coords):
-    loc = geolocator.reverse((coords.lat, coords.lon), timeout=5)
-    if not loc:
-        return {"location": "Storrs, CT"}
-    address = loc.raw["address"]
-    area_type = "city" if "city" in address else "town" if "town" in address else "county"
-    road = address.get("road", "")
-    area = address.get(area_type, "Storrs")
-    state = address.get("state", "CT")
-    return {"location": f"{road}, {area}, {state}" if road else f"{area}, {state}"}
